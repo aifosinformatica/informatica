@@ -1,0 +1,55 @@
+name: 🚀 Deploy por FTP
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ftp-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ftp-deploy:
+    name: 📤 Subir a FTP
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: 🔄 Checkout repo
+        uses: actions/checkout@v6
+
+      - name: 🚀 Deploy FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASS }}
+          port: 21
+          # El login de FTP ya cae en la raíz que se ve en FileZilla (esa raíz
+          # contiene "informatica" y "tresplanners" como carpetas hermanas).
+          # server-dir es relativo a esa raíz: NO repetir "informatica" acá o
+          # todo terminaría subiendo a informatica/informatica.
+          server-dir: /informatica/
+          protocol: ftp
+          # false = nunca borra en el servidor lo que no está en este repo.
+          # Así, config/.env e installed.lock (que solo existen en el hosting,
+          # nunca en git) sobreviven a cada deploy sin tocarlos.
+          dangerous-clean-slate: false
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.github/**
+            config/.env
+            config/*.local.php
+            config/installed.lock
+            doc/**
+            **/*.zip
+            **/.DS_Store
+            **/Thumbs.db
+
+      - name: ✅ Confirmar deploy finalizado
+        run: echo "::notice title=Deploy FTP::🚀 Modificaciones subidas al FTP correctamente"

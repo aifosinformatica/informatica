@@ -1,0 +1,124 @@
+-- Esquema de referencia. install.php lo aplica automáticamente: no hace falta
+-- correrlo a mano salvo que quieras importarlo directo (phpMyAdmin, HeidiSQL, etc.)
+-- La base de datos debe crearse ANTES, con charset utf8mb4 (ver doc/Idea.md > INSTALACIÓN).
+
+-- Varios administradores permitidos, todos con el mismo nivel de acceso (sin roles/permisos diferenciados).
+CREATE TABLE IF NOT EXISTS admins (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(60) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    email VARCHAR(160) NULL,
+    phone VARCHAR(40) NULL,
+    active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_login_at DATETIME NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Sesiones del panel de administración, guardadas en la base (no en archivos) para poder
+-- listarlas y cerrarlas de forma remota. Las sesiones del sitio público NO usan esta tabla.
+CREATE TABLE IF NOT EXISTS admin_sessions (
+    id VARCHAR(128) NOT NULL PRIMARY KEY,
+    admin_id INT UNSIGNED NULL,
+    ip VARCHAR(45) NULL,
+    user_agent VARCHAR(255) NULL,
+    payload MEDIUMTEXT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_activity_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_admin_sessions_admin FOREIGN KEY (admin_id) REFERENCES admins(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Auditoría de accesos: login exitoso, login fallido y logout.
+CREATE TABLE IF NOT EXISTS login_audit (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    admin_id INT UNSIGNED NULL,
+    username_attempted VARCHAR(60) NULL,
+    action ENUM('login_success','login_failed','logout') NOT NULL,
+    ip VARCHAR(45) NULL,
+    user_agent VARCHAR(255) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_login_audit_admin FOREIGN KEY (admin_id) REFERENCES admins(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS login_attempts (
+    ip VARCHAR(45) NOT NULL PRIMARY KEY,
+    attempts INT UNSIGNED NOT NULL DEFAULT 0,
+    locked_until DATETIME NULL,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS service_categories (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    page ENUM('reparacion-pc','desarrollo-web') NOT NULL DEFAULT 'reparacion-pc',
+    name VARCHAR(120) NOT NULL,
+    slug VARCHAR(140) NOT NULL UNIQUE,
+    sort_order INT NOT NULL DEFAULT 0,
+    visible TINYINT(1) NOT NULL DEFAULT 1,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS services (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    category_id INT UNSIGNED NOT NULL,
+    name VARCHAR(160) NOT NULL,
+    slug VARCHAR(180) NOT NULL UNIQUE,
+    short_description VARCHAR(255) NULL,
+    full_description TEXT NULL,
+    price_usd DECIMAL(10,2) NULL,
+    price_type ENUM('fijo','desde','adicional','consultar','mas_insumos','incluido_combo') NOT NULL DEFAULT 'fijo',
+    extra_text VARCHAR(160) NULL,
+    featured TINYINT(1) NOT NULL DEFAULT 0,
+    visible TINYINT(1) NOT NULL DEFAULT 1,
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_services_category FOREIGN KEY (category_id) REFERENCES service_categories(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS settings (
+    `key` VARCHAR(80) NOT NULL PRIMARY KEY,
+    `value` TEXT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS exchange_rates (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    source ENUM('api','manual') NOT NULL DEFAULT 'api',
+    rate_api DECIMAL(10,2) NULL,
+    adjustment_pct DECIMAL(5,2) NOT NULL DEFAULT 0,
+    rate_effective DECIMAL(10,2) NOT NULL,
+    fetched_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS reviews (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(120) NOT NULL,
+    rating TINYINT UNSIGNED NOT NULL,
+    body TEXT NOT NULL,
+    review_date DATE NULL,
+    url VARCHAR(255) NULL,
+    visible TINYINT(1) NOT NULL DEFAULT 1,
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS contact_requests (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    origin ENUM('reparacion-pc','desarrollo-web','contacto') NOT NULL,
+    name VARCHAR(120) NOT NULL,
+    whatsapp VARCHAR(40) NULL,
+    email VARCHAR(160) NULL,
+    business_name VARCHAR(160) NULL,
+    device VARCHAR(160) NULL,
+    message TEXT NULL,
+    service_slug VARCHAR(180) NULL,
+    consent TINYINT(1) NOT NULL DEFAULT 0,
+    status ENUM('nuevo','contactado','cerrado') NOT NULL DEFAULT 'nuevo',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS payment_plans (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    installments TINYINT UNSIGNED NOT NULL,
+    surcharge_pct DECIMAL(5,2) NOT NULL DEFAULT 0,
+    visible TINYINT(1) NOT NULL DEFAULT 1,
+    sort_order INT NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

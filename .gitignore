@@ -1,0 +1,13 @@
+/config/.env
+/config/*.local.php
+/config/installed.lock
+
+# Dumps sueltos (backups manuales, exportaciones de admin/export.php), pero
+# NUNCA el esquema de referencia que install.php necesita para crear las tablas.
+*.sql
+*.sql.gz
+!/sql/schema.sql
+
+/uploads/
+/vendor/
+/node_modules/

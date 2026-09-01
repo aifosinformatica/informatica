@@ -1,0 +1,27 @@
+Options -Indexes
+DirectoryIndex index.php
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    RewriteRule ^reparacion-pc/?$ reparacion-pc.php [L]
+    RewriteRule ^desarrollo-web/?$ desarrollo-web.php [L]
+    RewriteRule ^servicio/?$ servicio.php [L]
+    RewriteRule ^contacto/?$ contacto.php [L]
+    RewriteRule ^politica-de-privacidad/?$ politica-de-privacidad.php [L]
+    RewriteRule ^sitemap\.xml$ sitemap.php [L]
+
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^admin/?$ admin/index.php [L]
+</IfModule>
+
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+<FilesMatch "\.(sql|env|md)$">
+    Require all denied
+</FilesMatch>
