@@ -156,6 +156,8 @@ function seed_settings(PDO $pdo): void
         'dolar_manual' => '0',
         'redondeo_multiplo' => '500',
         'recargo_tarjeta_pct' => '18',
+        'turno_duracion_min' => '120',
+        'turno_dias_visibles' => '14',
     ];
 
     $stmt = $pdo->prepare(
@@ -164,6 +166,17 @@ function seed_settings(PDO $pdo): void
     );
     foreach ($defaults as $key => $value) {
         $stmt->execute(['key' => $key, 'value' => $value]);
+    }
+}
+
+/** Horario semanal default (lunes a viernes, 09:00 a 18:00) para no arrancar sin nada cargado. */
+function seed_booking_schedule(PDO $pdo): void
+{
+    $stmt = $pdo->prepare(
+        'INSERT INTO booking_schedule (weekday, start_time, end_time) VALUES (:weekday, :start, :end)'
+    );
+    foreach ([1, 2, 3, 4, 5] as $weekday) { // 1=lunes .. 5=viernes
+        $stmt->execute(['weekday' => $weekday, 'start' => '09:00:00', 'end' => '18:00:00']);
     }
 }
 
@@ -198,6 +211,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $existing = (int) $pdo->query('SELECT COUNT(*) FROM service_categories')->fetchColumn();
                 if ($existing === 0) {
                     seed_categories_and_services($pdo);
+                }
+                $existingSchedule = (int) $pdo->query('SELECT COUNT(*) FROM booking_schedule')->fetchColumn();
+                if ($existingSchedule === 0) {
+                    seed_booking_schedule($pdo);
                 }
                 seed_settings($pdo);
 

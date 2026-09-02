@@ -63,6 +63,16 @@ define('DB_NAME', env('DB_NAME', ''));
 define('DB_USER', env('DB_USER', ''));
 define('DB_PASS', env('DB_PASS', ''));
 
+// Sistema de turnos: login con Google (ver includes/google_oauth.php) y
+// envío de mails por SMTP (ver includes/mailer.php).
+define('GOOGLE_CLIENT_ID', env('GOOGLE_CLIENT_ID', ''));
+define('GOOGLE_CLIENT_SECRET', env('GOOGLE_CLIENT_SECRET', ''));
+define('SMTP_HOST', env('SMTP_HOST', 'smtp.gmail.com'));
+define('SMTP_PORT', (int) env('SMTP_PORT', '587'));
+define('SMTP_USER', env('SMTP_USER', ''));
+define('SMTP_PASS', env('SMTP_PASS', ''));
+define('SMTP_FROM_NAME', env('SMTP_FROM_NAME', 'Servicio Técnico'));
+
 define('INSTALL_LOCK_FILE', __DIR__ . '/installed.lock');
 define('IS_LOCAL', APP_ENV === 'local' || APP_ENV === 'development');
 

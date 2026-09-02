@@ -61,4 +61,32 @@
         : "Cerrado ahora · dejanos tu consulta por WhatsApp";
     }
   }
+
+  // Selector de horario en /turnos: un click en un slot carga los campos
+  // ocultos del form y muestra el bloque de confirmación (WhatsApp/motivo).
+  var slotButtons = document.querySelectorAll(".slot-btn");
+  var turnoDate = document.getElementById("turnoDate");
+  var turnoStartTime = document.getElementById("turnoStartTime");
+  if (slotButtons.length && turnoDate && turnoStartTime) {
+    var turnoConfirm = document.getElementById("turnoConfirm");
+    var turnoResumen = document.getElementById("turnoResumen");
+    slotButtons.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        slotButtons.forEach(function (b) { b.classList.remove("is-selected"); });
+        btn.classList.add("is-selected");
+        turnoDate.value = btn.getAttribute("data-date");
+        turnoStartTime.value = btn.getAttribute("data-time");
+
+        if (turnoResumen) {
+          var dayHeading = btn.closest(".slot-day");
+          var dayLabel = dayHeading ? dayHeading.querySelector("h4").textContent : btn.getAttribute("data-date");
+          turnoResumen.textContent = dayLabel + " a las " + btn.getAttribute("data-time") + " hs";
+        }
+        if (turnoConfirm) {
+          turnoConfirm.hidden = false;
+          turnoConfirm.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      });
+    });
+  }
 })();

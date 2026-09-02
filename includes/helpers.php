@@ -44,6 +44,16 @@ function url(string $path = '/'): string
 }
 
 /**
+ * Como url(), pero devuelve una URL absoluta (con protocolo y dominio). Hace
+ * falta para el redirect_uri de Google OAuth y para los links dentro de los
+ * mails, que no tienen el <base> del navegador para resolver una relativa.
+ */
+function absolute_url(string $path = '/'): string
+{
+    return APP_URL . $path;
+}
+
+/**
  * Redirige manteniendo el protocolo y host actuales (no el de APP_URL), para que
  * nunca se pierda una cookie "secure" saltando de https a http (o viceversa) —
  * pasa en entornos como Laragon, que sirven el mismo sitio por los dos protocolos.
@@ -90,6 +100,27 @@ function setting(string $key, ?string $default = null): ?string
         }
     }
     return $cache[$key] ?? $default;
+}
+
+/** "Y-m-d" → "Hoy · Lunes 8 de septiembre" (sin depender de setlocale/strftime, deprecado). */
+function format_date_es(string $date): string
+{
+    static $dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    static $meses = [
+        1 => 'enero', 2 => 'febrero', 3 => 'marzo', 4 => 'abril', 5 => 'mayo', 6 => 'junio',
+        7 => 'julio', 8 => 'agosto', 9 => 'septiembre', 10 => 'octubre', 11 => 'noviembre', 12 => 'diciembre',
+    ];
+
+    $timestamp = strtotime($date);
+    $label = $dias[(int) date('w', $timestamp)] . ' ' . (int) date('j', $timestamp) . ' de ' . $meses[(int) date('n', $timestamp)];
+
+    if ($date === date('Y-m-d')) {
+        return 'Hoy · ' . $label;
+    }
+    if ($date === date('Y-m-d', strtotime('+1 day'))) {
+        return 'Mañana · ' . $label;
+    }
+    return $label;
 }
 
 function slugify(string $text): string

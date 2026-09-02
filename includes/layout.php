@@ -100,6 +100,7 @@ function render_header(string $activePath = ''): void
         '/reparacion-pc' => 'Reparación PC',
         '/desarrollo-web' => 'Desarrollo web',
         '/servicio' => 'Cómo trabajamos',
+        '/turnos' => 'Pedir turno',
         '/contacto' => 'Contacto',
     ];
     ?>

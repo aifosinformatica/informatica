@@ -122,3 +122,50 @@ CREATE TABLE IF NOT EXISTS payment_plans (
     visible TINYINT(1) NOT NULL DEFAULT 1,
     sort_order INT NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ==========================================================================
+-- Sistema de turnos (ver doc/Idea.md y el plan de implementación)
+-- ==========================================================================
+
+-- Horario semanal recurrente de atención. Puede haber varios rangos por día
+-- (ej. mañana y tarde, con un corte al mediodía).
+CREATE TABLE IF NOT EXISTS booking_schedule (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    -- weekday: 0=domingo .. 6=sábado (igual que date('w') de PHP)
+    weekday TINYINT UNSIGNED NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    active TINYINT(1) NOT NULL DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Bloqueos puntuales sobre el horario semanal (feriados, imprevistos, etc.).
+-- start_time/end_time NULL en ambos = bloquea el día completo.
+CREATE TABLE IF NOT EXISTS booking_blocks (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    date DATE NOT NULL,
+    start_time TIME NULL,
+    end_time TIME NULL,
+    reason VARCHAR(160) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Turnos reservados por clientes logueados con Google (ver includes/google_oauth.php).
+-- No hay tabla de usuarios propia: el cliente se identifica por google_sub y
+-- los datos de contacto quedan guardados en cada turno.
+-- payment_status: 'simulado' = no se cobra todavía (comportamiento actual,
+-- confirma solo). 'pendiente'/'pagado' quedan reservados para cuando se pida
+-- pago real (ver plan de implementación).
+CREATE TABLE IF NOT EXISTS bookings (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    date DATE NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    google_sub VARCHAR(255) NOT NULL,
+    name VARCHAR(160) NOT NULL,
+    email VARCHAR(160) NOT NULL,
+    whatsapp VARCHAR(40) NULL,
+    motivo VARCHAR(255) NULL,
+    payment_status ENUM('simulado','pendiente','pagado') NOT NULL DEFAULT 'simulado',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_bookings_slot (date, start_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

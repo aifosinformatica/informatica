@@ -8,6 +8,7 @@ DirectoryIndex index.php
     RewriteRule ^desarrollo-web/?$ desarrollo-web.php [L]
     RewriteRule ^servicio/?$ servicio.php [L]
     RewriteRule ^contacto/?$ contacto.php [L]
+    RewriteRule ^turnos/?$ turnos.php [L]
     RewriteRule ^politica-de-privacidad/?$ politica-de-privacidad.php [L]
     RewriteRule ^sitemap\.xml$ sitemap.php [L]
 

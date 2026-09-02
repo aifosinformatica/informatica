@@ -19,21 +19,21 @@ json_ld_local_business();
 <section class="hero">
     <div class="container hero__inner">
         <div>
-            <span class="eyebrow"><span class="dot"></span><?= e(setting('direccion', '')) ?></span>
+            <span class="eyebrow"><span class="dot"></span>Servicio técnico en Caseros y El Palomar</span>
             <h1>Diagnóstico y reparación <em>profesional</em> de PC y notebooks</h1>
             <p style="font-size:1.1rem;max-width:520px;">
-                Service técnico en Caseros y El Palomar, con presupuesto claro antes de tocar el equipo.
-                También armamos páginas web que hacen que te escriban. Mayoría de los trabajos listos en
-                <?= e(setting('tiempo_estimado', '24/48 hs')) ?>.
+                Servicio técnico en Caseros y El Palomar. Precios claros, factura y garantía. Ofrecemos servicio en nuestra 
+                oficina, en tu domicilio, o con servicio puerta a puerta —retiramos y entregamos el equipo donde estés—. 
+                La mayoría de los trabajos, en <?= e(setting('tiempo_estimado', '24/48 hs')) ?>; las urgencias, en el día.
             </p>
             <div class="hero__actions">
-                <a href="<?= e(wa_link()) ?>" class="btn btn--primary" target="_blank" rel="noopener">Consultar por WhatsApp</a>
+                <a href="<?= e(wa_link()) ?>" class="btn btn--primary" target="_blank" rel="noopener">Pedir turno por WhatsApp</a>
+                <a href="<?= e(url('/turnos')) ?>" class="btn btn--ghost">Reservar turno online</a>
                 <a href="<?= e(url('/reparacion-pc')) ?>" class="btn btn--ghost">Ver servicios y precios</a>
             </div>
             <div class="hero__actions" style="margin-top:0;">
-                <span class="chip">Respuesta en <strong>&lt; 1&nbsp;hora</strong></span>
-                <span class="chip">Diagnóstico <strong>a la vista</strong></span>
-                <span class="chip">Trabajos en <strong><?= e(setting('tiempo_estimado', '24/48 hs')) ?></strong></span>
+                <span class="chip">Atención <strong>con turno previo</strong></span>
+                <span class="chip"><strong>Diagnóstico bonificado</strong> si hacés la reparación</span>
             </div>
         </div>
 
@@ -59,16 +59,17 @@ json_ld_local_business();
     <div class="container">
         <div class="bento">
             <div class="bento__item bento__item--wide reveal">
-                <strong><?= e(setting('tiempo_estimado', '24/48 hs')) ?></strong>
-                <span>Es lo que suele tardar la mayoría de los trabajos, de punta a punta.</span>
+                <strong>Gasto <br/>controlado</strong>
+                <span>Siempre presupuestamos primero y esperamos tu aprobación antes de hacer cualquier trabajo.</span>
+                <span style="color:var(--accent);font-weight:600;">💳 Aceptamos todos los medios de pago</span>
             </div>
             <div class="bento__item reveal">
-                <strong>100%</strong>
-                <span>Presupuesto antes de reparar. Sin sorpresas.</span>
+                <strong>Garantía escrita</strong>
+                <span>Los trabajos se entregan con factura C y garantía por escrito.</span>
             </div>
             <div class="bento__item reveal">
-                <strong>0</strong>
-                <span>Intermediarios: hablás con quien arregla el equipo.</span>
+                <strong>Precios claros</strong>
+                <span>Todos los precios están publicados en <a href="<?= e(url('/reparacion-pc')) ?>">este link</a>.</span>
             </div>
         </div>
     </div>
@@ -149,8 +150,26 @@ json_ld_local_business();
     <div class="container">
         <span class="eyebrow"><span class="dot"></span><?= e(setting('direccion', '')) ?></span>
         <h2>Dónde estamos</h2>
+        <p style="color:var(--text-muted);max-width:560px;">Atendemos <strong>únicamente con turno previo</strong> — coordiná día y horario por WhatsApp antes de acercarte, no es un local a la calle.</p>
         <iframe class="map-frame reveal" src="<?= e(maps_embed_url()) ?>" loading="lazy" title="Ubicación en el mapa"></iframe>
         <p style="margin-top:14px;"><a href="<?= e(maps_directions_url()) ?>" class="btn btn--ghost btn--sm" target="_blank" rel="noopener">Cómo llegar</a></p>
+
+        <div class="faq reveal" style="margin-top:18px;">
+            <details>
+                <summary>📍 Cómo llegar a nuestra oficina</summary>
+                <p><strong>🚌 En colectivo:</strong></p>
+                <ul>
+                    <li><strong>Líneas 343 y 123:</strong> bajar en la parada de Av. Mitre y Rosas. Queda a solo 1 cuadraa de la oficina.</li>
+                    <li><strong>Línea 181:</strong> bajar en la zona de Av. Mitre y La Merced (o Av. Mitre y Lisandro de la Torre).</li>
+                    <li><strong>Líneas 53, 105 y 237:</strong> bajar sobre Av. San Martín y Lisandro de la Torre, y caminar unas 3 cuadras por Lisandro de la Torre hasta Av. Mitre.</li>
+                </ul>
+                <p><strong>🚆 En tren:</strong></p>
+                <ul>
+                    <li><strong>Estación Lourdes</strong> (línea Urquiza): bajar ahí y caminar unas 10 cuadras, o tomar el colectivo 343/123 sobre Av. Mitre.</li>
+                    <li><strong>Estación Caseros</strong> (línea San Martín): bajar ahí y tomar el colectivo 343/181/123 hasta la oficina.</li>
+                </ul>
+            </details>
+        </div>
     </div>
 </section>
 

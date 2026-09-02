@@ -596,6 +596,11 @@ La sesión del panel se guarda en base de datos (no en archivos), separada de la
 
 Se registra además un log de auditoría de accesos: ingresos exitosos, ingresos fallidos y cierres de sesión, con fecha, usuario, IP y navegador.
 
+## Turnos
+
+Ver [SISTEMA DE TURNOS](#sistema-de-turnos): horario semanal, bloqueos y lista
+de turnos reservados (con cancelación), todo desde `/admin`.
+
 ## Backup rápido
 
 Agregar un botón **"Exportar todo (SQL)"** dentro de la administración que genere y descargue un dump completo de la base de datos (equivalente a `mysqldump`), para poder hacer un backup manual en cualquier momento sin depender de tener acceso al hosting/cPanel.
@@ -760,6 +765,54 @@ Implementar como mínimo:
 - posibilidad de que el usuario pida la baja de sus datos (alcanza con que sea vía WhatsApp/email, no hace falta un flujo automatizado).
 
 No hace falta un aviso de cookies estilo GDPR si no se usan cookies de tracking de terceros sin consentimiento; si más adelante se agrega Meta Pixel/Google Analytics, sumar un aviso simple de cookies.
+
+---
+
+# SISTEMA DE TURNOS
+
+El negocio no es un local a la calle: se atiende únicamente con turno previo.
+`/turnos` permite reservar uno online, además del canal de WhatsApp habitual.
+
+Flujo del cliente:
+
+- inicia sesión con **Google** (Authorization Code flow implementado a mano,
+  sin SDK — ver `includes/google_oauth.php`; no hay tabla de usuarios propia,
+  el cliente se identifica por el `sub` de Google);
+- elige un horario disponible, dentro del horario semanal que carga el admin;
+- confirma con WhatsApp de contacto y un motivo opcional;
+- recibe un mail de confirmación, y puede cancelar sus propios turnos desde
+  "Mis turnos" en la misma página.
+
+Disponibilidad (`includes/booking.php`):
+
+- horario semanal recurrente, con posibilidad de varios rangos por día (ej.
+  mañana y tarde);
+- bloqueos puntuales sobre ese horario (feriados, imprevistos), por fecha
+  completa o por rango horario;
+- duración de turno configurable desde Configuración (minutos) — **no se
+  puede cambiar mientras haya turnos reservados a futuro**, para no dejar
+  reservas ya confirmadas en un estado inconsistente;
+- un slot solo se ofrece si no se solapa con ningún bloqueo ni con ninguna
+  reserva ya existente (comparación por rango, no por igualdad exacta de
+  horario, para que convivan turnos creados con duraciones distintas).
+
+Administración:
+
+- horario semanal (`/admin/booking-schedule.php`) y bloqueos
+  (`/admin/booking-blocks.php`), ambos con alta/baja;
+- lista de turnos reservados (`/admin/bookings.php`), con cancelación (libera
+  el horario al instante);
+- el admin puede cancelar cualquier turno; el cliente solo los suyos.
+
+Mail: cada turno nuevo avisa por SMTP (Gmail con contraseña de aplicación —
+ver `config/.env.example`) tanto al admin (`setting('email')`) como al
+cliente, con un cliente SMTP propio (`includes/mailer.php`), sin librerías.
+
+Pago: no se cobra todavía. `bookings.payment_status` (`simulado` / `pendiente`
+/ `pagado`) deja preparado el modelo para cuando se pida pago real más
+adelante — hoy todas las reservas quedan como `simulado` (confirmadas al
+instante, sin pago), sin necesidad de rehacer el esquema el día que se
+implemente el cobro.
 
 ---
 
@@ -1067,6 +1120,12 @@ Como mínimo:
 `admin_sessions`
 
 `login_audit`
+
+`booking_schedule`
+
+`booking_blocks`
+
+`bookings`
 
 Opcional:
 

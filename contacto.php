@@ -49,6 +49,7 @@ page_start(
                 <p><a href="tel:<?= e(whatsapp_number()) ?>"><?= e(whatsapp_display()) ?></a></p>
                 <h3>Dirección</h3>
                 <p><?= e(setting('direccion', '')) ?></p>
+                <p style="font-size:.85rem;color:var(--text-muted);">Atendemos <strong>únicamente con turno previo</strong> — coordiná día y horario por WhatsApp antes de acercarte, no es un local a la calle.</p>
                 <h3>Horario</h3>
                 <p><?= e(setting('horario', '')) ?></p>
                 <?php if (setting('instagram')): ?>
@@ -78,6 +79,23 @@ page_start(
         <h2 style="margin-top:40px;">Cómo llegar</h2>
         <iframe class="map-frame reveal" src="<?= e(maps_embed_url()) ?>" loading="lazy" title="Ubicación en el mapa"></iframe>
         <p style="margin-top:14px;"><a href="<?= e(maps_directions_url()) ?>" class="btn btn--ghost btn--sm" target="_blank" rel="noopener">Cómo llegar</a></p>
+
+        <div class="faq reveal" style="margin-top:18px;">
+            <details>
+                <summary>📍 Cómo llegar a Av. Mitre 5761, Caseros</summary>
+                <p><strong>🚌 En colectivo:</strong></p>
+                <ul>
+                    <li><strong>Líneas 343 y 123:</strong> bajar en la parada de Av. Mitre y Lisandro de la Torre (o Av. Mitre y Marconi/Pringles). Queda a solo 1 o 2 cuadras de la oficina.</li>
+                    <li><strong>Línea 181:</strong> bajar en la zona de Av. Mitre y La Merced (o Av. Mitre y Lisandro de la Torre).</li>
+                    <li><strong>Líneas 53, 105 y 237:</strong> bajar sobre Av. San Martín y Lisandro de la Torre, y caminar unas 3 o 4 cuadras por Lisandro de la Torre hasta Av. Mitre.</li>
+                </ul>
+                <p><strong>🚆 En tren:</strong></p>
+                <ul>
+                    <li><strong>Estación Lourdes</strong> (línea Urquiza, 4,3★): bajar ahí y caminar unas 10 cuadras, o tomar el colectivo 343/123 sobre Av. Mitre.</li>
+                    <li><strong>Estación Caseros</strong> (línea San Martín, 4,1★): bajar ahí y tomar el colectivo 343/181/123 hasta la oficina.</li>
+                </ul>
+            </details>
+        </div>
     </div>
 </section>
 

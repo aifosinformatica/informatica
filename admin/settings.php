@@ -4,20 +4,34 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/../includes/price.php';
+require_once __DIR__ . '/../includes/booking.php';
 require_once __DIR__ . '/includes/layout.php';
 
 $fields = [
     'nombre_comercial', 'direccion', 'maps_query', 'whatsapp', 'whatsapp_display', 'telefono',
     'email', 'instagram', 'horario', 'tiempo_estimado',
     'dolar_mode', 'dolar_ajuste_pct', 'dolar_manual', 'redondeo_multiplo', 'recargo_tarjeta_pct',
+    'turno_duracion_min', 'turno_dias_visibles',
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_verify()) {
+    $fieldsToSave = $fields;
+
+    // La duración del turno solo se puede cambiar si no hay reservas a futuro:
+    // cambiarla con turnos ya confirmados podría dejar horarios inconsistentes
+    // (ver includes/booking.php > generate_slots_for_date).
+    $currentDuration = setting('turno_duracion_min', '120');
+    $newDuration = trim((string) ($_POST['turno_duracion_min'] ?? $currentDuration));
+    if ($newDuration !== $currentDuration && has_future_bookings()) {
+        flash_set('error', 'No se puede cambiar la duración del turno mientras haya turnos reservados a futuro. Cancelalos (o esperá a que pasen) e intentá de nuevo.');
+        $fieldsToSave = array_values(array_diff($fieldsToSave, ['turno_duracion_min']));
+    }
+
     $stmt = db()->prepare(
         'INSERT INTO settings (`key`, `value`) VALUES (:key, :value)
          ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)'
     );
-    foreach ($fields as $field) {
+    foreach ($fieldsToSave as $field) {
         $stmt->execute(['key' => $field, 'value' => trim((string) ($_POST[$field] ?? ''))]);
     }
     flash_set('ok', 'Configuración guardada.');
@@ -91,6 +105,24 @@ admin_page_start('Configuración', 'settings');
                 <input type="number" step="0.01" name="recargo_tarjeta_pct" value="<?= e($values['recargo_tarjeta_pct']) ?>">
             </label>
         </div>
+    </fieldset>
+
+    <fieldset>
+        <legend>Turnos</legend>
+        <div class="form-row form-row--2">
+            <label>Duración de cada turno (minutos)
+                <input type="number" name="turno_duracion_min" value="<?= e($values['turno_duracion_min']) ?>" min="5" step="5">
+            </label>
+            <label>Días a futuro que se muestran en <?= e(url('/turnos')) ?>
+                <input type="number" name="turno_dias_visibles" value="<?= e($values['turno_dias_visibles']) ?>" min="1">
+            </label>
+        </div>
+        <p style="font-size:.85rem;color:var(--text-muted);">
+            La duración no se puede cambiar mientras haya turnos reservados a futuro.
+            El horario semanal y los bloqueos se cargan aparte en
+            <a href="<?= e(url('/admin/booking-schedule.php')) ?>">Horario de turnos</a> y
+            <a href="<?= e(url('/admin/booking-blocks.php')) ?>">Bloqueos</a>.
+        </p>
     </fieldset>
 
     <button type="submit" class="btn btn--primary">Guardar configuración</button>
