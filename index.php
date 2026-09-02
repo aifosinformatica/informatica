@@ -79,15 +79,21 @@ json_ld_local_business();
     <div class="container">
         <span class="eyebrow"><span class="dot"></span>Lo más pedido</span>
         <h2>Precios claros, sin vueltas</h2>
-        <div class="receipt reveal">
+        <div class="price-cards">
             <?php foreach ($destacados as $servicio): ?>
-                <div class="receipt__row">
-                    <span class="receipt__name">
-                        <?= e($servicio['name']) ?>
-                        <?php if ($servicio['short_description']): ?><span class="receipt__detail"><?= e($servicio['short_description']) ?></span><?php endif; ?>
-                    </span>
-                    <span class="receipt__leader"></span>
-                    <span class="receipt__price"><?= e(service_price_label($servicio)) ?></span>
+                <div class="price-card reveal">
+                    <h3 class="price-card__name"><?= e($servicio['name']) ?></h3>
+                    <?php if ($servicio['short_description']): ?>
+                        <p class="price-card__desc"><?= e($servicio['short_description']) ?></p>
+                    <?php endif; ?>
+                    <?php if ($servicio['full_description']): ?>
+                        <ul class="price-card__features">
+                            <?php foreach (explode('|', $servicio['full_description']) as $item): ?>
+                                <?php if (trim($item) !== ''): ?><li><?= e(trim($item)) ?></li><?php endif; ?>
+                            <?php endforeach; ?>
+                        </ul>
+                    <?php endif; ?>
+                    <span class="price-card__price"><?= e(service_price_label($servicio)) ?></span>
                 </div>
             <?php endforeach; ?>
         </div>

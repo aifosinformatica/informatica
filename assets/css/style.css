@@ -177,16 +177,20 @@ p { margin: 0 0 1em; color: var(--text-muted); }
 .hero {
   position: relative; overflow: hidden;
   padding: 60px 0 52px;
-  background-image:
-    linear-gradient(var(--border-soft) 1px, transparent 1px),
-    linear-gradient(90deg, var(--border-soft) 1px, transparent 1px);
-  background-size: 42px 42px;
-  background-position: center -1px;
-  mask-image: linear-gradient(to bottom, black, transparent 94%);
 }
+/* Fondo decorativo (grilla + resplandor) en su propia capa, detrás del texto.
+   El degradado que lo desvanece hacia abajo vive acá, no en .hero: si estuviera
+   en .hero enmascararía también el contenido (título, botones, chips). */
 .hero::before {
   content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none;
-  background: radial-gradient(60% 55% at 15% 0%, var(--accent-dim), transparent 65%);
+  background-image:
+    linear-gradient(var(--border-soft) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border-soft) 1px, transparent 1px),
+    radial-gradient(60% 55% at 15% 0%, var(--accent-dim), transparent 65%);
+  background-size: 42px 42px, 42px 42px, 100% 100%;
+  background-position: center -1px, center -1px, 0 0;
+  background-repeat: repeat, repeat, no-repeat;
+  mask-image: linear-gradient(to bottom, black, transparent 94%);
 }
 .hero .container { position: relative; z-index: 1; }
 .hero__inner { display: grid; gap: 40px; }
@@ -201,8 +205,9 @@ p { margin: 0 0 1em; color: var(--text-muted); }
 }
 .hero__badge strong, .chip strong { color: var(--accent); font-weight: 600; }
 
-/* Panel de diagnóstico decorativo del hero */
+/* Panel de diagnóstico decorativo del hero — oculto en mobile: no aporta y suma scroll */
 .diag {
+  display: none;
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
   padding: 20px; position: relative; overflow: hidden;
 }
@@ -227,6 +232,7 @@ p { margin: 0 0 1em; color: var(--text-muted); }
 .diag__foot .tag .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
 .diag__foot .ref { font-family: var(--font-mono); font-size: .72rem; color: var(--text-dim); }
 @media (prefers-reduced-motion: reduce) { .diag__scan { display: none; } }
+@media (min-width: 980px) { .diag { display: block; } }
 
 /* Encabezado corto de página interna (sin panel de diagnóstico) */
 .page-intro { max-width: 720px; }
@@ -263,33 +269,9 @@ p { margin: 0 0 1em; color: var(--text-muted); }
 .bento__item span { font-size: .88rem; color: var(--text-muted); }
 
 /* ==========================================================================
-   Tablas de precios
+   Listados de precios (categorías completas, ej. reparacion-pc, adicionales)
    ========================================================================== */
-.price-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); }
-table.price-table { width: 100%; border-collapse: collapse; min-width: 480px; }
-.price-table th, .price-table td {
-  padding: 14px 18px; text-align: left; border-bottom: 1px solid var(--border-soft);
-  font-size: .95rem;
-}
-.price-table th {
-  color: var(--text-dim); font-weight: 600; font-size: .72rem; text-transform: uppercase;
-  letter-spacing: .08em; font-family: var(--font-mono); background: var(--surface-2);
-}
-.price-table tr:last-child td { border-bottom: none; }
-.price-table tbody tr:hover { background: var(--surface-2); }
-.price-table td.price {
-  color: var(--accent); font-weight: 600; white-space: nowrap;
-  font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right;
-}
-.price-table td.detail, .price-table .detail { color: var(--text-muted); }
-
 .category-block { margin: 30px 0; }
-.category-block h2 {
-  display: flex; align-items: center; gap: 10px; font-size: 1.15rem;
-  background: var(--surface-2); border: 1px solid var(--border); border-bottom: none;
-  border-radius: var(--radius) var(--radius) 0 0; padding: 14px 20px; margin: 0;
-}
-.category-block .price-table-wrap { border-radius: 0 0 var(--radius) var(--radius); border-top: none; }
 
 /* Bloque de precios estilo "comprobante", para listados cortos destacados */
 .receipt { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
@@ -297,12 +279,36 @@ table.price-table { width: 100%; border-collapse: collapse; min-width: 480px; }
 .receipt__cat h3 { font-family: var(--font); font-size: 1rem; font-weight: 700; color: var(--text); margin: 0; }
 .receipt__row { display: flex; align-items: baseline; gap: 10px; padding: 16px 22px; border-bottom: 1px solid var(--border-soft); }
 .receipt__row:last-child { border-bottom: none; }
-.receipt__name { font-size: .98rem; color: var(--text); font-weight: 500; flex: none; }
+.receipt__name { font-size: .98rem; color: var(--text); font-weight: 500; flex: 0 1 auto; min-width: 0; }
 .receipt__leader { flex: 1; border-bottom: 2px dotted var(--border); transform: translateY(-4px); min-width: 16px; }
 .receipt__price { font-family: var(--font-mono); font-weight: 600; color: var(--accent); font-size: 1.02rem; font-variant-numeric: tabular-nums; flex: none; white-space: nowrap; }
 .receipt__detail { display: block; font-size: .82rem; color: var(--text-muted); margin-top: 4px; }
 .receipt__note { padding: 16px 22px; font-size: .88rem; color: var(--text-muted); border-top: 1px solid var(--border); background: var(--surface-2); }
 .receipt__note strong { color: var(--text); }
+
+/* Cards de precios destacados (home): grilla que nunca fuerza scroll horizontal,
+   una columna en mobile y hasta 4 en desktop. */
+.price-cards { display: grid; gap: 16px; grid-template-columns: 1fr; }
+@media (min-width: 620px) { .price-cards { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1020px) { .price-cards { grid-template-columns: repeat(4, 1fr); } }
+.price-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 22px; display: flex; flex-direction: column; gap: 10px;
+}
+.price-card__name { font-family: var(--font-display); font-size: 1.05rem; margin: 0; color: var(--text); }
+.price-card__desc { margin: 0; font-size: .88rem; color: var(--text-muted); }
+.price-card__features { margin: 0; padding-left: 0; list-style: none; flex: 1; }
+.price-card__features li {
+  display: flex; gap: 8px; font-size: .86rem; color: var(--text-muted);
+  padding: 6px 0; border-top: 1px solid var(--border-soft);
+}
+.price-card__features li:first-child { border-top: none; }
+.price-card__features li::before { content: '—'; color: var(--accent); flex: none; }
+.price-card__price {
+  font-family: var(--font-mono); font-weight: 600; color: var(--accent); font-size: 1.2rem;
+  padding-top: 12px; margin-top: auto; border-top: 1px solid var(--border-soft);
+  font-variant-numeric: tabular-nums;
+}
 
 /* ==========================================================================
    Paquetes (desarrollo web)

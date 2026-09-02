@@ -123,7 +123,7 @@ admin_page_start($service ? 'Editar servicio' : 'Nuevo servicio', 'services');
         <input type="text" name="short_description" value="<?= e($service['short_description'] ?? '') ?>">
     </label>
 
-    <label>Descripción completa (opcional, no se usa en el listado corto)
+    <label>Descripción completa (opcional). Para varios ítems separá con "|" — ej: "Limpieza física|Cambio de pasta térmica|Test de estrés". Se muestra como lista en los paquetes de desarrollo web y, si el servicio está destacado, también en la home.
         <textarea name="full_description" rows="3"><?= e($service['full_description'] ?? '') ?></textarea>
     </label>
 

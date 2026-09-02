@@ -61,26 +61,18 @@ page_start(
         <?php foreach ($categorias as $categoria): ?>
             <?php if (!$categoria['services']) continue; ?>
             <div class="category-block reveal">
-                <h2><?= e($categoria['name']) ?></h2>
-                <div class="price-table-wrap">
-                    <table class="price-table">
-                        <thead>
-                        <tr><th>Servicio</th><th>Precio</th></tr>
-                        </thead>
-                        <tbody>
-                        <?php foreach ($categoria['services'] as $servicio): ?>
-                            <tr>
-                                <td>
-                                    <?= e($servicio['name']) ?>
-                                    <?php if ($servicio['short_description']): ?>
-                                        <br><span class="detail"><?= e($servicio['short_description']) ?></span>
-                                    <?php endif; ?>
-                                </td>
-                                <td class="price"><?= e(service_price_label($servicio)) ?></td>
-                            </tr>
-                        <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                <div class="receipt">
+                    <div class="receipt__cat"><h3><?= e($categoria['name']) ?></h3></div>
+                    <?php foreach ($categoria['services'] as $servicio): ?>
+                        <div class="receipt__row">
+                            <span class="receipt__name">
+                                <?= e($servicio['name']) ?>
+                                <?php if ($servicio['short_description']): ?><span class="receipt__detail"><?= e($servicio['short_description']) ?></span><?php endif; ?>
+                            </span>
+                            <span class="receipt__leader"></span>
+                            <span class="receipt__price"><?= e(service_price_label($servicio)) ?></span>
+                        </div>
+                    <?php endforeach; ?>
                 </div>
             </div>
         <?php endforeach; ?>

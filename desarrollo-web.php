@@ -77,18 +77,17 @@ page_start(
 <section class="section">
     <div class="container">
         <h2>Adicionales</h2>
-        <div class="price-table-wrap reveal">
-            <table class="price-table">
-                <thead><tr><th>Servicio</th><th>Precio</th></tr></thead>
-                <tbody>
-                <?php foreach ($adicionales as $servicio): ?>
-                    <tr>
-                        <td><?= e($servicio['name']) ?><?php if ($servicio['short_description']): ?><br><span class="detail"><?= e($servicio['short_description']) ?></span><?php endif; ?></td>
-                        <td class="price"><?= e(service_price_label($servicio)) ?></td>
-                    </tr>
-                <?php endforeach; ?>
-                </tbody>
-            </table>
+        <div class="receipt reveal">
+            <?php foreach ($adicionales as $servicio): ?>
+                <div class="receipt__row">
+                    <span class="receipt__name">
+                        <?= e($servicio['name']) ?>
+                        <?php if ($servicio['short_description']): ?><span class="receipt__detail"><?= e($servicio['short_description']) ?></span><?php endif; ?>
+                    </span>
+                    <span class="receipt__leader"></span>
+                    <span class="receipt__price"><?= e(service_price_label($servicio)) ?></span>
+                </div>
+            <?php endforeach; ?>
         </div>
     </div>
 </section>
