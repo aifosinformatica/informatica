@@ -172,8 +172,13 @@ CREATE TABLE IF NOT EXISTS bookings (
     name VARCHAR(160) NOT NULL,
     email VARCHAR(160) NOT NULL,
     whatsapp VARCHAR(40) NULL,
+    -- Servicio elegido por el cliente al pedir el turno (opcional: puede no saber
+    -- todavía qué necesita). ON DELETE SET NULL para no perder el turno si el
+    -- servicio se borra después; el nombre queda igual en el mail ya enviado.
+    service_id INT UNSIGNED NULL,
     motivo VARCHAR(255) NULL,
     payment_status ENUM('simulado','pendiente','pagado') NOT NULL DEFAULT 'simulado',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY uk_bookings_slot (date, start_time)
+    UNIQUE KEY uk_bookings_slot (date, start_time),
+    CONSTRAINT fk_bookings_service FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -29,12 +29,12 @@ admin_page_start('Turnos', 'bookings');
     <table class="admin-table">
         <thead>
             <tr>
-                <th>Fecha</th><th>Horario</th><th>Nombre</th><th>Contacto</th><th>Motivo</th><th>Pago</th><th></th>
+                <th>Fecha</th><th>Horario</th><th>Nombre</th><th>Contacto</th><th>Servicio</th><th>Motivo</th><th>Pago</th><th></th>
             </tr>
         </thead>
         <tbody>
         <?php if (!$turnos): ?>
-            <tr><td colspan="7">Todavía no hay turnos reservados.</td></tr>
+            <tr><td colspan="8">Todavía no hay turnos reservados.</td></tr>
         <?php endif; ?>
         <?php foreach ($turnos as $turno): ?>
             <tr>
@@ -45,6 +45,7 @@ admin_page_start('Turnos', 'bookings');
                     <?= e($turno['email']) ?>
                     <?php if ($turno['whatsapp']): ?><br><?= e($turno['whatsapp']) ?><?php endif; ?>
                 </td>
+                <td><?= e($turno['service_name'] ?? '—') ?></td>
                 <td><?= e($turno['motivo'] ?: '—') ?></td>
                 <td><span class="badge <?= $turno['payment_status'] === 'pagado' ? 'badge--on' : 'badge--off' ?>"><?= e(ucfirst($turno['payment_status'])) ?></span></td>
                 <td class="actions">

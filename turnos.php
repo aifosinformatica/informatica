@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/includes/booking.php';
 require_once __DIR__ . '/includes/mailer.php';
 require_once __DIR__ . '/includes/google_oauth.php';
+require_once __DIR__ . '/includes/services.php';
 require_once __DIR__ . '/includes/layout.php';
 
 $bookingUser = $_SESSION['booking_user'] ?? null;
@@ -41,6 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'name' => $bookingUser['name'],
         'email' => $bookingUser['email'],
         'whatsapp' => (string) ($_POST['whatsapp'] ?? ''),
+        'service_id' => $_POST['service_id'] ?? null,
         'motivo' => (string) ($_POST['motivo'] ?? ''),
         'date' => (string) ($_POST['date'] ?? ''),
         'start_time' => (string) ($_POST['start_time'] ?? ''),
@@ -60,6 +62,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $slotsByDate = $bookingUser ? get_available_slots() : [];
 $ownBookings = $bookingUser ? get_own_bookings($bookingUser['sub']) : [];
+$serviceGroups = $bookingUser ? get_services_for_booking_select() : [];
+// Si se llega desde la ficha de un servicio (ej. /turnos?service=reparacion-pc-cambio-de-bateria),
+// ese servicio queda preseleccionado en el combo.
+$preselectedServiceId = $bookingUser ? get_bookable_service_id_by_slug((string) ($_GET['service'] ?? '')) : null;
 
 page_start(
     'Pedí tu turno online',
@@ -88,6 +94,7 @@ page_start(
                     <?php foreach ($ownBookings as $own): ?>
                         <div class="card reveal">
                             <p><strong><?= e(booking_datetime_label($own)) ?></strong></p>
+                            <?php if (!empty($own['service_name'])): ?><p><?= e($own['service_name']) ?></p><?php endif; ?>
                             <?php if ($own['motivo']): ?><p style="color:var(--text-muted);"><?= e($own['motivo']) ?></p><?php endif; ?>
                             <form method="post" onsubmit="return confirm('¿Cancelar este turno? El horario queda libre para otra persona.');">
                                 <?= csrf_field() ?>
@@ -124,6 +131,20 @@ page_start(
                     <div id="turnoConfirm" class="card" hidden>
                         <p>Turno elegido: <strong id="turnoResumen"></strong></p>
                         <label>WhatsApp <input type="tel" name="whatsapp" required placeholder="11 5555-5555"></label>
+                        <?php if ($serviceGroups): ?>
+                            <label>¿Ya sabés qué necesitás? (opcional)
+                                <select name="service_id">
+                                    <option value="">No estoy seguro, que me asesoren</option>
+                                    <?php foreach ($serviceGroups as $groupLabel => $items): ?>
+                                        <optgroup label="<?= e($groupLabel) ?>">
+                                            <?php foreach ($items as $item): ?>
+                                                <option value="<?= (int) $item['id'] ?>" <?= $preselectedServiceId === $item['id'] ? 'selected' : '' ?>><?= e($item['label']) ?></option>
+                                            <?php endforeach; ?>
+                                        </optgroup>
+                                    <?php endforeach; ?>
+                                </select>
+                            </label>
+                        <?php endif; ?>
                         <label>Motivo de la consulta (opcional) <textarea name="motivo" rows="3" placeholder="Ej: no enciende, pantalla rota, lento..."></textarea></label>
                         <button type="submit" class="btn btn--primary">Confirmar turno</button>
                     </div>

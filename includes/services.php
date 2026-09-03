@@ -40,6 +40,58 @@ function get_categories_with_services(string $page): array
     return $categories;
 }
 
+/**
+ * Servicios visibles "elegibles" (sin las cabeceras de grupo, que no son un
+ * ítem concreto), agrupados por página y con un label listo para un <option>
+ * ("Servicio – Variante" cuando es una variante). Se usa en el <select> de
+ * /turnos para que el cliente indique qué necesita al pedir el turno.
+ *
+ * @return array<string, array<int, array{id:int, label:string}>> label de página => opciones
+ */
+function get_services_for_booking_select(): array
+{
+    $pages = ['reparacion-pc' => 'Reparación de PC', 'desarrollo-web' => 'Desarrollo web'];
+    $groups = [];
+
+    foreach ($pages as $page => $pageLabel) {
+        $items = [];
+        foreach (get_categories_with_services($page) as $category) {
+            foreach ($category['services'] as $service) {
+                if ($service['variants']) {
+                    foreach ($service['variants'] as $variant) {
+                        $items[] = ['id' => (int) $variant['id'], 'label' => $service['name'] . ' – ' . $variant['name']];
+                    }
+                } else {
+                    $items[] = ['id' => (int) $service['id'], 'label' => $service['name']];
+                }
+            }
+        }
+        if ($items) {
+            $groups[$pageLabel] = $items;
+        }
+    }
+
+    return $groups;
+}
+
+/**
+ * Busca un servicio visible y "elegible" (no cabecera de grupo) por su slug.
+ * Pensado para preseleccionar el <select> de /turnos vía ?service=<slug>
+ * cuando el turno se pide desde la ficha de un servicio puntual.
+ */
+function get_bookable_service_id_by_slug(string $slug): ?int
+{
+    if ($slug === '') {
+        return null;
+    }
+    $stmt = db()->prepare(
+        "SELECT id FROM services WHERE slug = :slug AND visible = 1 AND price_type != 'grupo' LIMIT 1"
+    );
+    $stmt->execute(['slug' => $slug]);
+    $id = $stmt->fetchColumn();
+    return $id !== false ? (int) $id : null;
+}
+
 function get_featured_services(int $limit = 4): array
 {
     $stmt = db()->prepare(

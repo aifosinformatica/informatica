@@ -49,6 +49,15 @@ function get_blocks_for_date(string $date): array
     return $stmt->fetchAll();
 }
 
+/** Nombre del servicio elegido (o null si no existe/ya no es visible) para el <select> de /turnos. */
+function get_service_name_for_booking(int $serviceId): ?string
+{
+    $stmt = db()->prepare('SELECT name FROM services WHERE id = :id AND visible = 1 LIMIT 1');
+    $stmt->execute(['id' => $serviceId]);
+    $name = $stmt->fetchColumn();
+    return $name !== false ? (string) $name : null;
+}
+
 /** Reservas ya confirmadas ese día (para no ofrecer un horario ocupado). */
 function get_bookings_for_date(string $date): array
 {
@@ -157,7 +166,7 @@ function get_available_slots(): array
  * personas reserven el mismo horario si llegaron a la página en simultáneo).
  * La unicidad real la garantiza además la clave uk_bookings_slot en la base.
  *
- * @param array{google_sub:string,name:string,email:string,whatsapp:?string,motivo:?string,date:string,start_time:string} $data
+ * @param array{google_sub:string,name:string,email:string,whatsapp:?string,motivo:?string,date:string,start_time:string,service_id?:mixed} $data
  * @return array{ok:bool,error?:string,booking?:array}
  */
 function create_booking(array $data): array
@@ -174,6 +183,20 @@ function create_booking(array $data): array
         return ['ok' => false, 'error' => 'Ese horario ya no está disponible, elegí otro.'];
     }
 
+    // El servicio es opcional (el cliente puede no saber todavía qué necesita).
+    // Si mandan un id que no corresponde a un servicio visible (formulario
+    // manipulado, servicio borrado entre que cargó la página y envió el form),
+    // se guarda como "sin elegir" en lugar de rechazar todo el turno.
+    $serviceId = null;
+    $serviceName = null;
+    $rawServiceId = (int) ($data['service_id'] ?? 0);
+    if ($rawServiceId > 0) {
+        $serviceName = get_service_name_for_booking($rawServiceId);
+        if ($serviceName !== null) {
+            $serviceId = $rawServiceId;
+        }
+    }
+
     $endMinutes = time_to_minutes($start) + turno_duracion_min();
     $booking = [
         'date' => $date,
@@ -183,17 +206,19 @@ function create_booking(array $data): array
         'name' => trim($data['name']),
         'email' => trim($data['email']),
         'whatsapp' => trim((string) ($data['whatsapp'] ?? '')) ?: null,
+        'service_id' => $serviceId,
         'motivo' => trim((string) ($data['motivo'] ?? '')) ?: null,
     ];
 
     try {
         $stmt = db()->prepare(
-            'INSERT INTO bookings (date, start_time, end_time, google_sub, name, email, whatsapp, motivo)
-             VALUES (:date, :start_time, :end_time, :google_sub, :name, :email, :whatsapp, :motivo)'
+            'INSERT INTO bookings (date, start_time, end_time, google_sub, name, email, whatsapp, service_id, motivo)
+             VALUES (:date, :start_time, :end_time, :google_sub, :name, :email, :whatsapp, :service_id, :motivo)'
         );
         $stmt->execute($booking);
         $booking['id'] = (int) db()->lastInsertId();
         $booking['payment_status'] = 'simulado';
+        $booking['service_name'] = $serviceName;
         return ['ok' => true, 'booking' => $booking];
     } catch (PDOException $e) {
         if ($e->getCode() === '23000') {
@@ -206,7 +231,8 @@ function create_booking(array $data): array
 /** Turnos para el panel de admin. */
 function get_bookings_admin(bool $onlyUpcoming = true): array
 {
-    $sql = 'SELECT * FROM bookings';
+    $sql = 'SELECT bookings.*, services.name AS service_name FROM bookings
+            LEFT JOIN services ON services.id = bookings.service_id';
     if ($onlyUpcoming) {
         $sql .= ' WHERE date >= CURDATE()';
     }
@@ -218,7 +244,9 @@ function get_bookings_admin(bool $onlyUpcoming = true): array
 function get_own_bookings(string $googleSub): array
 {
     $stmt = db()->prepare(
-        'SELECT * FROM bookings WHERE google_sub = :sub AND date >= CURDATE() ORDER BY date, start_time'
+        'SELECT bookings.*, services.name AS service_name FROM bookings
+         LEFT JOIN services ON services.id = bookings.service_id
+         WHERE google_sub = :sub AND date >= CURDATE() ORDER BY date, start_time'
     );
     $stmt->execute(['sub' => $googleSub]);
     return $stmt->fetchAll();

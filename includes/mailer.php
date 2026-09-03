@@ -166,7 +166,7 @@ function booking_datetime_label(array $booking): string
 
 /**
  * Aviso al admin (setting('email')) de que hay un turno nuevo.
- * @param array{date:string,start_time:string,end_time:string,name:string,email:string,whatsapp:?string,motivo:?string} $booking
+ * @param array{date:string,start_time:string,end_time:string,name:string,email:string,whatsapp:?string,motivo:?string,service_name?:?string} $booking
  */
 function send_booking_admin_notification(array $booking): bool
 {
@@ -181,6 +181,7 @@ function send_booking_admin_notification(array $booking): bool
         . '<li><strong>Nombre:</strong> ' . e($booking['name']) . '</li>'
         . '<li><strong>Email:</strong> ' . e($booking['email']) . '</li>'
         . '<li><strong>WhatsApp:</strong> ' . e($booking['whatsapp'] ?: '—') . '</li>'
+        . '<li><strong>Servicio:</strong> ' . e($booking['service_name'] ?? '—') . '</li>'
         . '<li><strong>Motivo:</strong> ' . e($booking['motivo'] ?: '—') . '</li>'
         . '</ul>';
 
@@ -189,12 +190,17 @@ function send_booking_admin_notification(array $booking): bool
 
 /**
  * Confirmación al cliente que reservó el turno.
- * @param array{date:string,start_time:string,end_time:string,name:string,email:string} $booking
+ * @param array{date:string,start_time:string,end_time:string,name:string,email:string,service_name?:?string} $booking
  */
 function send_booking_client_confirmation(array $booking): bool
 {
+    $servicioLinea = !empty($booking['service_name'])
+        ? '<p>Servicio: ' . e($booking['service_name']) . '</p>'
+        : '';
+
     $body = '<p>Hola ' . e($booking['name']) . ', tu turno quedó reservado:</p>'
         . '<p><strong>' . e(booking_datetime_label($booking)) . '</strong></p>'
+        . $servicioLinea
         . '<p>' . e(setting('direccion', '')) . '. Atendemos únicamente con turno previo, no es un local a la calle.</p>'
         . '<p>Si necesitás cancelarlo, podés hacerlo desde <a href="' . e(absolute_url('/turnos')) . '">' . e(absolute_url('/turnos')) . '</a> (sección "Mis turnos"), o escribinos por WhatsApp.</p>';
 
