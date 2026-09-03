@@ -59,19 +59,27 @@ CREATE TABLE IF NOT EXISTS service_categories (
 CREATE TABLE IF NOT EXISTS services (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     category_id INT UNSIGNED NOT NULL,
+    -- Si no es NULL, esta fila es una "variante" de otro servicio (ej. "Memoria RAM" es
+    -- variante de "Cambio de componentes"), con su propio precio independiente. El servicio
+    -- "padre" no tiene precio propio (price_type = 'grupo') y agrupa sus variantes en la
+    -- vista (ver includes/services.php > get_categories_with_services). Se admite un solo
+    -- nivel de anidamiento a propósito: una variante no es una categoría nueva.
+    parent_service_id INT UNSIGNED NULL,
     name VARCHAR(160) NOT NULL,
     slug VARCHAR(180) NOT NULL UNIQUE,
     short_description VARCHAR(255) NULL,
     full_description TEXT NULL,
     price_usd DECIMAL(10,2) NULL,
-    price_type ENUM('fijo','desde','adicional','consultar','mas_insumos','incluido_combo') NOT NULL DEFAULT 'fijo',
+    price_type ENUM('fijo','desde','adicional','consultar','mas_insumos','incluido_combo','grupo') NOT NULL DEFAULT 'fijo',
     extra_text VARCHAR(160) NULL,
     featured TINYINT(1) NOT NULL DEFAULT 0,
     visible TINYINT(1) NOT NULL DEFAULT 1,
     sort_order INT NOT NULL DEFAULT 0,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_services_category FOREIGN KEY (category_id) REFERENCES service_categories(id) ON DELETE CASCADE
+    CONSTRAINT fk_services_category FOREIGN KEY (category_id) REFERENCES service_categories(id) ON DELETE CASCADE,
+    CONSTRAINT fk_services_parent FOREIGN KEY (parent_service_id) REFERENCES services(id) ON DELETE CASCADE,
+    INDEX idx_services_parent (parent_service_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS settings (

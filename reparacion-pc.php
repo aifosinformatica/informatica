@@ -30,13 +30,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['form']) && $_POST['fo
 
 $categorias = get_categories_with_services('reparacion-pc');
 
+// Se busca por categoría (no por slug: slugify() puede variar los guiones según el
+// servidor con nombres acentuados) — la categoría "Diagnóstico" siempre tiene un único
+// servicio, "Diagnóstico técnico".
 $diagnostico = null;
 foreach ($categorias as $categoria) {
-    foreach ($categoria['services'] as $servicio) {
-        if ($servicio['slug'] === 'reparacion-pc-diagnostico-tecnico') {
-            $diagnostico = $servicio;
-            break 2;
-        }
+    if ($categoria['name'] === 'Diagnóstico' && $categoria['services']) {
+        $diagnostico = $categoria['services'][0];
+        break;
     }
 }
 
@@ -53,6 +54,7 @@ page_start(
             <span class="eyebrow"><span class="dot"></span>Precios reales, actualizados hoy</span>
             <h1>Reparación y actualización de PC y notebooks</h1>
             <p>Estos son los precios que manejamos hoy. Si tu equipo o tu problema no está en la lista, escribinos igual — seguro lo resolvemos.</p>
+            <p><strong>Los precios son de mano de obra.</strong> Cuando el trabajo necesita un repuesto o insumo (memoria, disco, pantalla, batería, etc.), ese costo va aparte y se cotiza según el componente.</p>
             <div class="hero__actions">
                 <a href="<?= e(wa_link()) ?>" class="btn btn--primary" target="_blank" rel="noopener">Consultar por WhatsApp</a>
             </div>
@@ -64,14 +66,35 @@ page_start(
                 <div class="receipt">
                     <div class="receipt__cat"><h3><?= e($categoria['name']) ?></h3></div>
                     <?php foreach ($categoria['services'] as $servicio): ?>
-                        <div class="receipt__row">
-                            <span class="receipt__name">
-                                <?= e($servicio['name']) ?>
-                                <?php if ($servicio['short_description']): ?><span class="receipt__detail"><?= e($servicio['short_description']) ?></span><?php endif; ?>
-                            </span>
-                            <span class="receipt__leader"></span>
-                            <span class="receipt__price"><?= e(service_price_label($servicio)) ?></span>
-                        </div>
+                        <?php if ($servicio['variants']): ?>
+                            <div class="receipt__group">
+                                <div class="receipt__group-header">
+                                    <span class="receipt__name">
+                                        <?= e($servicio['name']) ?>
+                                        <?php if ($servicio['short_description']): ?><span class="receipt__detail"><?= e($servicio['short_description']) ?></span><?php endif; ?>
+                                    </span>
+                                </div>
+                                <?php foreach ($servicio['variants'] as $variante): ?>
+                                    <div class="receipt__row receipt__row--variant">
+                                        <span class="receipt__name">
+                                            <?= e($variante['name']) ?>
+                                            <?php if ($variante['short_description']): ?><span class="receipt__detail"><?= e($variante['short_description']) ?></span><?php endif; ?>
+                                        </span>
+                                        <span class="receipt__leader"></span>
+                                        <span class="receipt__price"><?= e(service_price_label($variante)) ?></span>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php else: ?>
+                            <div class="receipt__row">
+                                <span class="receipt__name">
+                                    <?= e($servicio['name']) ?>
+                                    <?php if ($servicio['short_description']): ?><span class="receipt__detail"><?= e($servicio['short_description']) ?></span><?php endif; ?>
+                                </span>
+                                <span class="receipt__leader"></span>
+                                <span class="receipt__price"><?= e(service_price_label($servicio)) ?></span>
+                            </div>
+                        <?php endif; ?>
                     <?php endforeach; ?>
                 </div>
             </div>

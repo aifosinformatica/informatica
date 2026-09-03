@@ -286,6 +286,15 @@ p { margin: 0 0 1em; color: var(--text-muted); }
 .receipt__note { padding: 16px 22px; font-size: .88rem; color: var(--text-muted); border-top: 1px solid var(--border); background: var(--surface-2); }
 .receipt__note strong { color: var(--text); }
 
+/* Grupo de variantes dentro de un receipt (ej. "Cambio de componentes" -> RAM, disco, fuente...) */
+.receipt__group { border-bottom: 1px solid var(--border-soft); }
+.receipt__group:last-child { border-bottom: none; }
+.receipt__group-header { padding: 16px 22px 4px; }
+.receipt__group-header .receipt__name { font-weight: 700; }
+.receipt__row--variant { padding: 8px 22px 8px 38px; }
+.receipt__row--variant .receipt__name { font-weight: 400; font-size: .92rem; color: var(--text-muted); }
+.receipt__row--variant:last-child { padding-bottom: 18px; }
+
 /* Cards de precios destacados (home): grilla que nunca fuerza scroll horizontal,
    una columna en mobile y hasta 4 en desktop. */
 .price-cards { display: grid; gap: 16px; grid-template-columns: 1fr; }

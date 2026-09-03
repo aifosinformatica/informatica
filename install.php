@@ -27,50 +27,84 @@ function schema_statements(): array
 
 function seed_categories_and_services(PDO $pdo): void
 {
-    // page => [ [name, [ [name, price_usd, price_type, extra_text, short_description, full_description, featured], ... ] ], ... ]
+    // page => [ categoryName => [ [name, price_usd, price_type, extra_text, short_description, full_description, featured, variants?], ... ] ]
+    // "variants" (opcional) arma un servicio "grupo" (price_type='grupo', sin precio propio) con
+    // sus variantes hijas [name, price_usd, price_type, extra_text, short_description], cada una
+    // con su propio precio independiente (ver services.parent_service_id / includes/services.php).
     $data = [
         'reparacion-pc' => [
-            'Actualizaciones' => [
-                ['Cambio de disco y/o RAM', 29.27, 'mas_insumos', '+ insumos', 'Tu PC vuelve a ser rápida, sin gastar en un equipo nuevo.', null, 1],
-                ['Cambio de disco/RAM + instalación de Windows', 58.54, 'fijo', null, 'Hardware nuevo y Windows a punto, listo para usar apenas lo retirás.', null, 0],
-            ],
-            'Sistemas' => [
-                ['Instalación de sistema operativo', 35.77, 'fijo', null, 'Windows o macOS, instalado y configurado como recién salido de fábrica.', null, 0],
-            ],
-            'Mantenimiento' => [
-                ['Notebook', 42.28, 'fijo', null, 'Le sacamos el polvo acumulado y bajamos la temperatura: menos ruido, menos calor, más vida útil.', null, 1],
-                ['PC sin gráfica dedicada', 29.27, 'fijo', null, 'Un service completo para que respire mejor y no se te apague en pleno uso.', null, 0],
-                ['PC con gráfica dedicada', 42.28, 'fijo', null, 'Incluye la placa de video: la abrimos y limpiamos por dentro, no solo por fuera.', null, 0],
-                ['Watercooling', 5.85, 'adicional', null, 'Si tu PC tiene refrigeración líquida, le hacemos mantenimiento aparte.', null, 0],
-            ],
-            'Notebooks' => [
-                ['Cambio de pantalla', 61.79, 'mas_insumos', '+ repuesto', 'Rota, rayada o con líneas raras: te la cambiamos por una nueva.', null, 0],
-                ['Cambio de bisagras', 74.80, 'mas_insumos', '+ repuestos', '¿Se abre sola o hace ruido al levantar la tapa? Eso tiene arreglo. Preguntanos también si la carcasa está rota.', null, 0],
-            ],
-            'Fuentes' => [
-                ['Cambio de fuente', 29.27, 'mas_insumos', '+ fuente', '¿No prende o se apaga de la nada? Muchas veces es la fuente.', null, 0],
-                ['Cambio de fuente + mantenimiento', 55.28, 'mas_insumos', '+ fuente', 'Aprovechás la visita y le hacemos también un service completo.', null, 0],
-            ],
             'Diagnóstico' => [
-                ['Diagnóstico técnico', 42.28, 'fijo', null,
-                    'Revisamos todo y te contamos qué tiene, en criollo y sin sorpresas después.',
+                ['Diagnóstico técnico', 42.33, 'fijo', null,
+                    'El costo se bonifica total o parcialmente si después hacés la reparación correspondiente con nosotros.',
                     null, 1],
             ],
-            'Otros servicios' => [
-                ['Cambio de teclado de notebook', null, 'consultar', null, null, null, 0],
-                ['Cambio de batería', null, 'consultar', null, null, null, 0],
-                ['Reparación o reemplazo de conector de carga', null, 'consultar', null, null, null, 0],
-                ['Conectores USB', null, 'consultar', null, null, null, 0],
-                ['Problemas de encendido', null, 'consultar', null, null, null, 0],
-                ['Migración de datos', null, 'consultar', null, null, null, 0],
-                ['Clonado de discos', null, 'consultar', null, null, null, 0],
-                ['Eliminación de malware', null, 'consultar', null, null, null, 0],
-                ['Optimización de Windows', null, 'consultar', null, null, null, 0],
-                ['Recuperación de información', null, 'consultar', null, null, null, 0],
-                ['Configuración de impresoras', null, 'consultar', null, null, null, 0],
-                ['Problemas de Wi-Fi y red', null, 'consultar', null, null, null, 0],
-                ['Armado de PC', null, 'consultar', null, null, null, 0],
-                ['Diagnóstico de componentes', null, 'consultar', null, null, null, 0],
+            'PC' => [
+                ['Cambio de componentes', null, 'grupo', null,
+                    'El precio es el mismo aunque se cambien uno o varios componentes en la misma intervención.',
+                    null, 1, [
+                        ['Memoria RAM', 29.31, 'mas_insumos', null, null],
+                        ['Disco HDD / SSD / NVMe', 29.31, 'mas_insumos', null, null],
+                        ['Fuente', 29.31, 'mas_insumos', null, null],
+                        ['Placa de video / GPU', 29.31, 'mas_insumos', null, null],
+                        ['Placa de red', 29.31, 'mas_insumos', null, null],
+                        ['Dispositivos PCI / PCI-E', 29.31, 'mas_insumos', null, null],
+                    ]],
+                ['Cambio de CPU y/o motherboard', null, 'grupo', null, null, null, 0, [
+                    ['Cambio de CPU', 42.33, 'mas_insumos', null, null],
+                    ['Cambio de motherboard', 48.85, 'mas_insumos', null, null],
+                    ['Cambio de motherboard + CPU', 48.85, 'mas_insumos', null, null],
+                ]],
+                ['Mantenimiento y limpieza', null, 'grupo', null,
+                    'Limpieza física completa y cambio de pasta térmica. El precio varía según si el equipo tiene placa de video dedicada y/o refrigeración líquida.',
+                    null, 0, [
+                        ['Sin GPU dedicada, sin watercooling', 29.31, 'fijo', null, null],
+                        ['Sin GPU dedicada, con watercooling', 34.52, 'fijo', null, null],
+                        ['Con GPU dedicada, sin watercooling', 42.33, 'fijo', null, null],
+                        ['Con GPU dedicada, con watercooling', 48.20, 'fijo', null, null],
+                    ]],
+                ['Armado y desarmado completo', 55.36, 'fijo', null, 'Armado o desarmado completo de un equipo de escritorio.', null, 0],
+            ],
+            'Notebook' => [
+                ['Cambio de componentes', null, 'grupo', null,
+                    'El precio es el mismo aunque se cambien uno o varios componentes en la misma intervención.',
+                    null, 0, [
+                        ['Disco HDD / SSD / NVMe', 42.33, 'mas_insumos', null, null],
+                        ['Memoria RAM', 42.33, 'mas_insumos', null, null],
+                        ['Placa Wi-Fi / placa de red', 42.33, 'mas_insumos', null, null],
+                    ]],
+                ['Cambio de pantalla', null, 'grupo', null, 'Rota, rayada o con líneas raras: te la cambiamos por una nueva.', null, 0, [
+                    ['Cambio de pantalla', 61.88, 'mas_insumos', null, null],
+                    ['Cambio de pantalla + flex', 87.93, 'mas_insumos', null, null],
+                ]],
+                ['Cambio de teclado', null, 'grupo', null, null, null, 0, [
+                    ['Teclado sin soldadura', 35.82, 'mas_insumos', null, null],
+                    ['Teclado soldado', 81.42, 'mas_insumos', null, null],
+                ]],
+                ['Cambio de batería', 35.82, 'mas_insumos', null, null, null, 0],
+                ['Cambio o reparación de bisagras', 74.90, 'mas_insumos', null,
+                    '¿Se abre sola o hace ruido al levantar la tapa? Eso tiene arreglo. Preguntanos también si la carcasa está rota.', null, 0],
+                ['Cambio de pin/conector de carga', null, 'grupo', null, null, null, 0, [
+                    ['Pin/conector sin soldadura', 48.85, 'mas_insumos', null, null],
+                    ['Pin/conector soldado', 87.93, 'mas_insumos', null, null],
+                ]],
+                ['Mantenimiento y limpieza de notebook', 42.33, 'fijo', null,
+                    'Le sacamos el polvo acumulado y bajamos la temperatura: menos ruido, menos calor, más vida útil.', null, 1],
+            ],
+            'Software y datos' => [
+                ['Instalación de Windows', null, 'grupo', null, 'Los precios no incluyen licencias de Windows.', null, 0, [
+                    ['Instalación limpia de Windows', 35.82, 'fijo', null, null],
+                    ['Instalación de Windows en disco nuevo', 58.62, 'mas_insumos', null, null],
+                    ['Instalación de Windows en disco nuevo + backup de hasta 50 GB', 71.65, 'mas_insumos', null, 'Incluye backup de hasta 50 GB.'],
+                ]],
+                ['Instalación de macOS', 35.82, 'fijo', null, 'No incluye licencias, aplicaciones pagas ni otros costos externos si existieran.', null, 0],
+                ['Clonado de disco', 61.88, 'fijo', null, null, null, 0],
+                ['Migración de datos', 61.88, 'fijo', null, 'Incluye migración de datos de hasta 1 TB.', null, 0],
+                ['Instalación de software', 22.79, 'fijo', null, 'No incluye licencia del software.', null, 0],
+                ['Recuperación de información', 35.82, 'fijo', '/ hora', null, null, 0],
+                ['Limpieza de virus & malware', 35.82, 'fijo', '/ hora', null, null, 0],
+                ['Optimización de Windows', 35.82, 'fijo', '/ hora', null, null, 0],
+                ['Problemas de Wi-Fi & red', 35.82, 'fijo', '/ hora', null, null, 0],
+                ['Impresoras y problemas de impresión', 35.82, 'fijo', '/ hora', null, null, 0],
             ],
         ],
         'desarrollo-web' => [
@@ -105,9 +139,9 @@ function seed_categories_and_services(PDO $pdo): void
     );
     $svcStmt = $pdo->prepare(
         'INSERT INTO services
-            (category_id, name, slug, short_description, full_description, price_usd, price_type, extra_text, featured, sort_order)
+            (category_id, parent_service_id, name, slug, short_description, full_description, price_usd, price_type, extra_text, featured, sort_order)
          VALUES
-            (:category_id, :name, :slug, :short_description, :full_description, :price_usd, :price_type, :extra_text, :featured, :sort_order)'
+            (:category_id, :parent_service_id, :name, :slug, :short_description, :full_description, :price_usd, :price_type, :extra_text, :featured, :sort_order)'
     );
 
     $catOrder = 0;
@@ -119,10 +153,13 @@ function seed_categories_and_services(PDO $pdo): void
             $categoryId = (int) $pdo->lastInsertId();
 
             $svcOrder = 0;
-            foreach ($services as [$name, $priceUsd, $priceType, $extraText, $shortDesc, $fullDesc, $featured]) {
+            foreach ($services as $serviceRow) {
+                [$name, $priceUsd, $priceType, $extraText, $shortDesc, $fullDesc, $featured] = $serviceRow;
+                $variants = $serviceRow[7] ?? null;
                 $svcOrder += 10;
                 $svcStmt->execute([
                     'category_id' => $categoryId,
+                    'parent_service_id' => null,
                     'name' => $name,
                     'slug' => $page . '-' . slugify($name),
                     'short_description' => $shortDesc,
@@ -133,6 +170,27 @@ function seed_categories_and_services(PDO $pdo): void
                     'featured' => $featured,
                     'sort_order' => $svcOrder,
                 ]);
+                $parentId = (int) $pdo->lastInsertId();
+
+                if ($variants) {
+                    $variantOrder = 0;
+                    foreach ($variants as [$vName, $vPriceUsd, $vPriceType, $vExtraText, $vShortDesc]) {
+                        $variantOrder += 10;
+                        $svcStmt->execute([
+                            'category_id' => $categoryId,
+                            'parent_service_id' => $parentId,
+                            'name' => $vName,
+                            'slug' => $page . '-' . slugify($name) . '-' . slugify($vName),
+                            'short_description' => $vShortDesc,
+                            'full_description' => null,
+                            'price_usd' => $vPriceUsd,
+                            'price_type' => $vPriceType,
+                            'extra_text' => $vExtraText,
+                            'featured' => 0,
+                            'sort_order' => $variantOrder,
+                        ]);
+                    }
+                }
             }
         }
     }

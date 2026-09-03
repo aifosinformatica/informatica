@@ -51,8 +51,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $lockedUntil = $attempts >= 5 ? date('Y-m-d H:i:s', time() + 300) : null;
                 db()->prepare(
                     'INSERT INTO login_attempts (ip, attempts, locked_until) VALUES (:ip, :attempts, :locked)
-                     ON DUPLICATE KEY UPDATE attempts = :attempts, locked_until = :locked'
-                )->execute(['ip' => $ip, 'attempts' => $attempts, 'locked' => $lockedUntil]);
+                     ON DUPLICATE KEY UPDATE attempts = :attempts2, locked_until = :locked2'
+                )->execute([
+                    'ip' => $ip,
+                    'attempts' => $attempts,
+                    'locked' => $lockedUntil,
+                    'attempts2' => $attempts,
+                    'locked2' => $lockedUntil,
+                ]);
                 log_login_attempt(null, $username, 'login_failed');
 
                 $error = 'Usuario o contraseña incorrectos.';

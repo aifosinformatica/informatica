@@ -22,7 +22,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_verify()) {
 }
 
 $categorias = db()->query('SELECT * FROM service_categories ORDER BY page, sort_order, name')->fetchAll();
-$serviciosStmt = db()->prepare('SELECT * FROM services WHERE category_id = :cid ORDER BY sort_order, name');
+// Se agrupan las variantes junto a su "padre" (en vez de una lista plana por sort_order):
+// IFNULL(parent_service_id, id) hace que cada variante quede pegada a su cabecera de grupo.
+$serviciosStmt = db()->prepare(
+    'SELECT s.*, p.name AS parent_name FROM services s
+     LEFT JOIN services p ON p.id = s.parent_service_id
+     WHERE s.category_id = :cid
+     ORDER BY IFNULL(s.parent_service_id, s.id), (s.parent_service_id IS NOT NULL), s.sort_order, s.name'
+);
 
 admin_page_start('Servicios', 'services');
 ?>
@@ -45,7 +52,11 @@ admin_page_start('Servicios', 'services');
             <tbody>
             <?php foreach ($servicios as $servicio): ?>
                 <tr>
-                    <td><?= e($servicio['name']) ?></td>
+                    <td>
+                        <?php if ($servicio['parent_service_id']): ?><span style="color:var(--text-muted);">↳ </span><?php endif; ?>
+                        <?= e($servicio['name']) ?>
+                        <?php if ($servicio['parent_name']): ?><small style="color:var(--text-muted);"> (variante de <?= e($servicio['parent_name']) ?>)</small><?php endif; ?>
+                    </td>
                     <td><?= e($servicio['price_type']) ?></td>
                     <td><?= $servicio['price_usd'] !== null ? 'USD ' . e(number_format((float) $servicio['price_usd'], 2, ',', '.')) : '—' ?></td>
                     <td><?= e(service_price_label($servicio)) ?></td>
