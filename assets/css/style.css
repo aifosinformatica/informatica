@@ -519,14 +519,42 @@ fieldset { border: 1px solid var(--border); border-radius: var(--radius); paddin
 .cal-slot--blocked { background: rgba(148, 152, 160, .1); border-color: var(--border); }
 .cal-slot__unblock-btn { background: transparent; border: 1px solid var(--border); color: var(--text-muted); border-radius: 999px; padding: 4px 10px; font-size: .78rem; cursor: pointer; }
 
-.cal-modal { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); padding: 24px; max-width: 420px; width: calc(100% - 32px); }
+.cal-modal {
+  border: 1px solid var(--border); border-radius: var(--radius) var(--radius) 0 0;
+  background: var(--surface); color: var(--text);
+  width: 100%; max-width: none; max-height: calc(100vh - 8px); max-height: calc(100dvh - 8px);
+  margin: auto 0 0; padding: 18px 18px max(18px, env(safe-area-inset-bottom));
+  overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain;
+}
 .cal-modal::backdrop { background: rgba(0, 0, 0, .6); }
 .cal-modal h2 { font-family: var(--font-display); font-size: 1.1rem; margin: 0 0 6px; }
-.cal-modal form { display: grid; gap: 14px; }
+.cal-modal form { display: grid; gap: 12px; }
 .cal-modal label { display: flex; flex-direction: column; gap: 6px; font-size: .9rem; color: var(--text-muted); }
 .cal-modal input, .cal-modal select, .cal-modal textarea {
   background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm);
-  padding: 10px 12px; color: var(--text); font: inherit;
+  width: 100%; min-width: 0; min-height: 44px; padding: 10px 12px;
+  color: var(--text); font: inherit; font-size: 16px;
 }
-.cal-modal__actions { display: flex; justify-content: flex-end; gap: 10px; }
+.cal-modal textarea { resize: vertical; }
+.cal-modal__actions {
+  position: sticky; bottom: -18px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  margin: 2px -18px -18px;
+  padding: 12px 18px max(18px, env(safe-area-inset-bottom));
+  background: var(--surface); border-top: 1px solid var(--border);
+}
+.cal-modal__actions .btn { width: 100%; padding-inline: 12px; }
+
+@media (min-width: 600px) {
+  .cal-modal {
+    width: calc(100% - 32px); max-width: 420px; max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px);
+    margin: auto; padding: 24px; border-radius: var(--radius);
+  }
+  .cal-modal form { gap: 14px; }
+  .cal-modal__actions {
+    position: static; display: flex; justify-content: flex-end;
+    margin: 0; padding: 0; background: transparent; border-top: 0;
+  }
+  .cal-modal__actions .btn { width: auto; }
+}
 fieldset legend { padding: 0 8px; color: var(--accent); font-weight: 600; font-family: var(--font-mono); font-size: .85rem; }
