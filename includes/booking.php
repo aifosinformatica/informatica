@@ -52,7 +52,16 @@ function get_blocks_for_date(string $date): array
 /** Nombre del servicio elegido (o null si no existe/ya no es visible) para el <select> de /turnos. */
 function get_service_name_for_booking(int $serviceId): ?string
 {
-    $stmt = db()->prepare('SELECT name FROM services WHERE id = :id AND visible = 1 LIMIT 1');
+    $stmt = db()->prepare(
+        "SELECT CASE
+                    WHEN parent.id IS NULL THEN service.name
+                    ELSE CONCAT(parent.name, ' — ', service.name)
+                END AS display_name
+         FROM services service
+         LEFT JOIN services parent ON parent.id = service.parent_service_id
+         WHERE service.id = :id AND service.visible = 1
+         LIMIT 1"
+    );
     $stmt->execute(['id' => $serviceId]);
     $name = $stmt->fetchColumn();
     return $name !== false ? (string) $name : null;
@@ -70,9 +79,14 @@ function get_bookings_for_date(string $date): array
 function get_bookings_admin_for_date(string $date): array
 {
     $stmt = db()->prepare(
-        'SELECT bookings.*, services.name AS service_name FROM bookings
+        "SELECT bookings.*,
+                CASE WHEN parent.id IS NULL THEN services.name
+                     ELSE CONCAT(parent.name, ' — ', services.name)
+                END AS service_name
+         FROM bookings
          LEFT JOIN services ON services.id = bookings.service_id
-         WHERE date = :date ORDER BY start_time'
+         LEFT JOIN services parent ON parent.id = services.parent_service_id
+         WHERE date = :date ORDER BY start_time"
     );
     $stmt->execute(['date' => $date]);
     return $stmt->fetchAll();
@@ -394,8 +408,13 @@ function create_admin_booking(array $data): array
 /** Turnos para el panel de admin. */
 function get_bookings_admin(bool $onlyUpcoming = true): array
 {
-    $sql = 'SELECT bookings.*, services.name AS service_name FROM bookings
-            LEFT JOIN services ON services.id = bookings.service_id';
+    $sql = "SELECT bookings.*,
+                   CASE WHEN parent.id IS NULL THEN services.name
+                        ELSE CONCAT(parent.name, ' — ', services.name)
+                   END AS service_name
+            FROM bookings
+            LEFT JOIN services ON services.id = bookings.service_id
+            LEFT JOIN services parent ON parent.id = services.parent_service_id";
     if ($onlyUpcoming) {
         $sql .= ' WHERE date >= CURDATE()';
     }
@@ -407,9 +426,14 @@ function get_bookings_admin(bool $onlyUpcoming = true): array
 function get_own_bookings(string $googleSub): array
 {
     $stmt = db()->prepare(
-        'SELECT bookings.*, services.name AS service_name FROM bookings
+        "SELECT bookings.*,
+                CASE WHEN parent.id IS NULL THEN services.name
+                     ELSE CONCAT(parent.name, ' — ', services.name)
+                END AS service_name
+         FROM bookings
          LEFT JOIN services ON services.id = bookings.service_id
-         WHERE google_sub = :sub AND date >= CURDATE() ORDER BY date, start_time'
+         LEFT JOIN services parent ON parent.id = services.parent_service_id
+         WHERE google_sub = :sub AND date >= CURDATE() ORDER BY date, start_time"
     );
     $stmt->execute(['sub' => $googleSub]);
     return $stmt->fetchAll();
