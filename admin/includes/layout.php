@@ -11,6 +11,7 @@ function admin_page_start(string $title, string $active = ''): void
         'reviews' => ['/admin/reviews.php', 'Reseñas'],
         'contacts' => ['/admin/contacts.php', 'Consultas'],
         'bookings' => ['/admin/bookings.php', 'Turnos'],
+        'booking-calendar' => ['/admin/booking-calendar.php', 'Calendario rápido'],
         'booking-schedule' => ['/admin/booking-schedule.php', 'Horario de turnos'],
         'booking-blocks' => ['/admin/booking-blocks.php', 'Bloqueos'],
         'settings' => ['/admin/settings.php', 'Configuración'],

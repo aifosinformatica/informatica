@@ -22,7 +22,8 @@ admin_page_start('Turnos', 'bookings');
 
 <p>
     Horario semanal: <a href="<?= e(url('/admin/booking-schedule.php')) ?>">configurar</a> ·
-    Bloqueos puntuales: <a href="<?= e(url('/admin/booking-blocks.php')) ?>">configurar</a>
+    Bloqueos puntuales: <a href="<?= e(url('/admin/booking-blocks.php')) ?>">configurar</a> ·
+    Reservar/bloquear rápido: <a href="<?= e(url('/admin/booking-calendar.php')) ?>">calendario</a>
 </p>
 
 <div class="admin-table-wrap">
@@ -40,9 +41,9 @@ admin_page_start('Turnos', 'bookings');
             <tr>
                 <td><?= e(date('d/m/Y', strtotime($turno['date']))) ?></td>
                 <td><?= e(substr($turno['start_time'], 0, 5)) ?> a <?= e(substr($turno['end_time'], 0, 5)) ?></td>
-                <td><?= e($turno['name']) ?></td>
+                <td><?= e($turno['name']) ?><?php if ($turno['source'] === 'admin'): ?> <span class="badge badge--off">Manual</span><?php endif; ?></td>
                 <td>
-                    <?= e($turno['email']) ?>
+                    <?= e($turno['email'] ?: '—') ?>
                     <?php if ($turno['whatsapp']): ?><br><?= e($turno['whatsapp']) ?><?php endif; ?>
                 </td>
                 <td><?= e($turno['service_name'] ?? '—') ?></td>

@@ -168,9 +168,13 @@ CREATE TABLE IF NOT EXISTS bookings (
     date DATE NOT NULL,
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
-    google_sub VARCHAR(255) NOT NULL,
+    -- NULL cuando el turno lo carga el admin manualmente (consulta que llegó
+    -- por teléfono, WhatsApp o mail): no hay login de Google de por medio, así
+    -- que ese turno no aparece en "Mis turnos" del cliente ni se autocancela.
+    google_sub VARCHAR(255) NULL,
+    source ENUM('cliente','admin') NOT NULL DEFAULT 'cliente',
     name VARCHAR(160) NOT NULL,
-    email VARCHAR(160) NOT NULL,
+    email VARCHAR(160) NULL,
     whatsapp VARCHAR(40) NULL,
     -- Servicio elegido por el cliente al pedir el turno (opcional: puede no saber
     -- todavía qué necesita). ON DELETE SET NULL para no perder el turno si el

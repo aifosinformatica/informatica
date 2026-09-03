@@ -485,4 +485,48 @@ table.admin-table { width: 100%; border-collapse: collapse; min-width: 640px; }
 .form-row { display: grid; gap: 14px; grid-template-columns: 1fr; }
 @media (min-width: 700px) { .form-row.form-row--2 { grid-template-columns: 1fr 1fr; } }
 fieldset { border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin: 0 0 20px; }
+
+/* ==========================================================================
+   Calendario rápido de admin (/admin/booking-calendar.php)
+   ========================================================================== */
+.cal-range { display: flex; gap: 10px; margin-bottom: 20px; }
+.cal-range a { color: var(--text-muted); font-size: .88rem; }
+.cal-range a.is-active { color: var(--accent); font-weight: 600; }
+
+.cal-grid { display: grid; gap: 16px; grid-template-columns: 1fr; margin-bottom: 24px; }
+@media (min-width: 700px) { .cal-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1050px) { .cal-grid { grid-template-columns: repeat(3, 1fr); } }
+
+.cal-day { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+.cal-day h3 { font-family: var(--font-display); font-size: .95rem; margin: 0 0 12px; }
+.cal-day__slots { display: flex; flex-direction: column; gap: 8px; }
+
+.cal-slot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px; border-radius: var(--radius-sm); font-size: .84rem; border: 1px solid transparent; }
+.cal-slot__time { font-family: var(--font-mono); white-space: nowrap; }
+.cal-slot__label { color: var(--text-muted); font-size: .82rem; line-height: 1.3; }
+.cal-slot__actions { display: flex; align-items: center; gap: 6px; }
+.cal-slot form { display: inline; }
+
+.cal-slot--free { background: var(--surface-2); border-color: var(--border); }
+.cal-slot__book-btn { background: transparent; border: 1px solid var(--accent-line); color: var(--accent); border-radius: 999px; padding: 4px 10px; font-size: .78rem; cursor: pointer; }
+.cal-slot__book-btn:hover { background: var(--accent-dim); }
+.cal-slot__block-btn { background: transparent; border: 1px solid var(--border); border-radius: 999px; padding: 4px 8px; font-size: .82rem; line-height: 1; cursor: pointer; }
+.cal-slot__block-btn:hover { border-color: var(--error); }
+
+.cal-slot--booked { background: var(--status-dim); border-color: rgba(79, 140, 255, .3); }
+.cal-slot__cancel-btn { background: transparent; border: 1px solid rgba(79, 140, 255, .4); color: var(--status); border-radius: 999px; padding: 4px 10px; font-size: .78rem; cursor: pointer; }
+
+.cal-slot--blocked { background: rgba(148, 152, 160, .1); border-color: var(--border); }
+.cal-slot__unblock-btn { background: transparent; border: 1px solid var(--border); color: var(--text-muted); border-radius: 999px; padding: 4px 10px; font-size: .78rem; cursor: pointer; }
+
+.cal-modal { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); padding: 24px; max-width: 420px; width: calc(100% - 32px); }
+.cal-modal::backdrop { background: rgba(0, 0, 0, .6); }
+.cal-modal h2 { font-family: var(--font-display); font-size: 1.1rem; margin: 0 0 6px; }
+.cal-modal form { display: grid; gap: 14px; }
+.cal-modal label { display: flex; flex-direction: column; gap: 6px; font-size: .9rem; color: var(--text-muted); }
+.cal-modal input, .cal-modal select, .cal-modal textarea {
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 10px 12px; color: var(--text); font: inherit;
+}
+.cal-modal__actions { display: flex; justify-content: flex-end; gap: 10px; }
 fieldset legend { padding: 0 8px; color: var(--accent); font-weight: 600; font-family: var(--font-mono); font-size: .85rem; }

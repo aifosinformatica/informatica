@@ -44,7 +44,7 @@ function get_all_blocks(): array
 /** Bloqueos que aplican a una fecha puntual. */
 function get_blocks_for_date(string $date): array
 {
-    $stmt = db()->prepare('SELECT start_time, end_time FROM booking_blocks WHERE date = :date');
+    $stmt = db()->prepare('SELECT id, start_time, end_time, reason FROM booking_blocks WHERE date = :date ORDER BY start_time');
     $stmt->execute(['date' => $date]);
     return $stmt->fetchAll();
 }
@@ -62,6 +62,18 @@ function get_service_name_for_booking(int $serviceId): ?string
 function get_bookings_for_date(string $date): array
 {
     $stmt = db()->prepare('SELECT start_time, end_time FROM bookings WHERE date = :date');
+    $stmt->execute(['date' => $date]);
+    return $stmt->fetchAll();
+}
+
+/** Igual que get_bookings_for_date(), pero con los datos completos (para mostrar en el calendario de admin). */
+function get_bookings_admin_for_date(string $date): array
+{
+    $stmt = db()->prepare(
+        'SELECT bookings.*, services.name AS service_name FROM bookings
+         LEFT JOIN services ON services.id = bookings.service_id
+         WHERE date = :date ORDER BY start_time'
+    );
     $stmt->execute(['date' => $date]);
     return $stmt->fetchAll();
 }
@@ -146,6 +158,82 @@ function generate_slots_for_date(string $date): array
     return $slots;
 }
 
+/**
+ * Igual que generate_slots_for_date(), pero para el calendario rápido de
+ * admin (/admin/booking-calendar.php): en vez de devolver solo los horarios
+ * libres, devuelve TODA la grilla del día con el estado de cada uno ('free',
+ * 'booked' u 'blocked') y el detalle (el turno o el bloqueo correspondiente),
+ * para poder reservar o bloquear con un click, o ver quién ocupa cada uno.
+ *
+ * @return array<int, array{start:string, end:string, status:string, detail:?array}>
+ */
+function get_admin_slots_for_date(string $date): array
+{
+    $weekday = (int) date('w', strtotime($date));
+    $ranges = get_schedule_for_weekday($weekday);
+    if (!$ranges) {
+        return [];
+    }
+
+    $duration = turno_duracion_min();
+    if ($duration <= 0) {
+        return [];
+    }
+
+    $blocks = get_blocks_for_date($date);
+    $bookings = get_bookings_admin_for_date($date);
+
+    $isToday = $date === date('Y-m-d');
+    $nowMinutes = $isToday ? ((int) date('H') * 60 + (int) date('i')) : -1;
+
+    $slots = [];
+    foreach ($ranges as $range) {
+        $start = time_to_minutes($range['start_time']);
+        $end = time_to_minutes($range['end_time']);
+
+        for ($slotStart = $start; $slotStart + $duration <= $end; $slotStart += $duration) {
+            $slotEnd = $slotStart + $duration;
+            if ($isToday && $slotStart <= $nowMinutes) {
+                continue;
+            }
+
+            $status = 'free';
+            $detail = null;
+
+            foreach ($blocks as $block) {
+                $blockStart = $block['start_time'] !== null ? time_to_minutes($block['start_time']) : 0;
+                $blockEnd = $block['end_time'] !== null ? time_to_minutes($block['end_time']) : 24 * 60;
+                if ($slotStart < $blockEnd && $blockStart < $slotEnd) {
+                    $status = 'blocked';
+                    $detail = $block;
+                    break;
+                }
+            }
+
+            if ($status === 'free') {
+                foreach ($bookings as $booking) {
+                    $bookingStart = time_to_minutes($booking['start_time']);
+                    $bookingEnd = time_to_minutes($booking['end_time']);
+                    if ($slotStart < $bookingEnd && $bookingStart < $slotEnd) {
+                        $status = 'booked';
+                        $detail = $booking;
+                        break;
+                    }
+                }
+            }
+
+            $slots[] = [
+                'start' => minutes_to_time($slotStart),
+                'end' => minutes_to_time($slotEnd),
+                'status' => $status,
+                'detail' => $detail,
+            ];
+        }
+    }
+
+    return $slots;
+}
+
 /** @return array<string, array<int, string>> fecha ("Y-m-d") => horarios disponibles */
 function get_available_slots(): array
 {
@@ -203,6 +291,7 @@ function create_booking(array $data): array
         'start_time' => $start . ':00',
         'end_time' => minutes_to_time($endMinutes) . ':00',
         'google_sub' => $data['google_sub'],
+        'source' => 'cliente',
         'name' => trim($data['name']),
         'email' => trim($data['email']),
         'whatsapp' => trim((string) ($data['whatsapp'] ?? '')) ?: null,
@@ -212,8 +301,8 @@ function create_booking(array $data): array
 
     try {
         $stmt = db()->prepare(
-            'INSERT INTO bookings (date, start_time, end_time, google_sub, name, email, whatsapp, service_id, motivo)
-             VALUES (:date, :start_time, :end_time, :google_sub, :name, :email, :whatsapp, :service_id, :motivo)'
+            'INSERT INTO bookings (date, start_time, end_time, google_sub, source, name, email, whatsapp, service_id, motivo)
+             VALUES (:date, :start_time, :end_time, :google_sub, :source, :name, :email, :whatsapp, :service_id, :motivo)'
         );
         $stmt->execute($booking);
         $booking['id'] = (int) db()->lastInsertId();
@@ -223,6 +312,80 @@ function create_booking(array $data): array
     } catch (PDOException $e) {
         if ($e->getCode() === '23000') {
             return ['ok' => false, 'error' => 'Ese horario ya fue tomado por otra persona, elegí otro.'];
+        }
+        throw $e;
+    }
+}
+
+/**
+ * Turno cargado a mano por el admin (consulta que llegó por teléfono,
+ * WhatsApp o mail): no requiere login de Google, así que google_sub queda
+ * NULL y el turno no aparece en "Mis turnos" del cliente ni se autocancela
+ * — se administra solo desde el panel (ver /admin/booking-calendar.php).
+ *
+ * @param array{name:string,whatsapp:string,email?:string,motivo?:string,service_id?:mixed,date:string,start_time:string} $data
+ * @return array{ok:bool,error?:string,booking?:array}
+ */
+function create_admin_booking(array $data): array
+{
+    $date = $data['date'] ?? '';
+    $start = substr((string) ($data['start_time'] ?? ''), 0, 5);
+
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) || !preg_match('/^\d{2}:\d{2}$/', $start)) {
+        return ['ok' => false, 'error' => 'Horario inválido, elegí de nuevo.'];
+    }
+
+    $name = trim((string) ($data['name'] ?? ''));
+    if ($name === '') {
+        return ['ok' => false, 'error' => 'Falta el nombre del cliente.'];
+    }
+    $whatsapp = trim((string) ($data['whatsapp'] ?? ''));
+    if ($whatsapp === '') {
+        return ['ok' => false, 'error' => 'Falta el teléfono del cliente.'];
+    }
+
+    $available = generate_slots_for_date($date);
+    if (!in_array($start, $available, true)) {
+        return ['ok' => false, 'error' => 'Ese horario ya no está disponible, elegí otro.'];
+    }
+
+    $serviceId = null;
+    $serviceName = null;
+    $rawServiceId = (int) ($data['service_id'] ?? 0);
+    if ($rawServiceId > 0) {
+        $serviceName = get_service_name_for_booking($rawServiceId);
+        if ($serviceName !== null) {
+            $serviceId = $rawServiceId;
+        }
+    }
+
+    $endMinutes = time_to_minutes($start) + turno_duracion_min();
+    $booking = [
+        'date' => $date,
+        'start_time' => $start . ':00',
+        'end_time' => minutes_to_time($endMinutes) . ':00',
+        'google_sub' => null,
+        'source' => 'admin',
+        'name' => $name,
+        'email' => trim((string) ($data['email'] ?? '')) ?: null,
+        'whatsapp' => $whatsapp,
+        'service_id' => $serviceId,
+        'motivo' => trim((string) ($data['motivo'] ?? '')) ?: null,
+    ];
+
+    try {
+        $stmt = db()->prepare(
+            'INSERT INTO bookings (date, start_time, end_time, google_sub, source, name, email, whatsapp, service_id, motivo)
+             VALUES (:date, :start_time, :end_time, :google_sub, :source, :name, :email, :whatsapp, :service_id, :motivo)'
+        );
+        $stmt->execute($booking);
+        $booking['id'] = (int) db()->lastInsertId();
+        $booking['payment_status'] = 'simulado';
+        $booking['service_name'] = $serviceName;
+        return ['ok' => true, 'booking' => $booking];
+    } catch (PDOException $e) {
+        if ($e->getCode() === '23000') {
+            return ['ok' => false, 'error' => 'Ese horario ya fue tomado, elegí otro.'];
         }
         throw $e;
     }
