@@ -30,6 +30,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_verify()) {
             ]);
             flash_set('ok', 'Bloqueo agregado.');
         }
+    } elseif ($action === 'create_range') {
+        $dateFrom = (string) ($_POST['date_from'] ?? '');
+        $dateTo = (string) ($_POST['date_to'] ?? '');
+        $start = trim((string) ($_POST['range_start_time'] ?? ''));
+        $end = trim((string) ($_POST['range_end_time'] ?? ''));
+        $reason = trim((string) ($_POST['range_reason'] ?? ''));
+
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateFrom) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateTo)) {
+            flash_set('error', 'Elegí fecha "desde" y "hasta" válidas.');
+        } elseif ($dateTo < $dateFrom) {
+            flash_set('error', 'La fecha "hasta" tiene que ser igual o posterior a "desde".');
+        } elseif (($start === '') !== ($end === '')) {
+            flash_set('error', 'Completá "desde" y "hasta" de horario, o dejá los dos vacíos para bloquear el día completo.');
+        } else {
+            $totalDias = intdiv(strtotime($dateTo) - strtotime($dateFrom), 86400) + 1;
+            if ($totalDias > 180) {
+                flash_set('error', 'Ese período es de más de 180 días, revisá las fechas.');
+            } else {
+                // Un bloqueo por día del período (mismo modelo que un bloqueo suelto: se
+                // pueden editar/borrar individualmente después). Si algún día del período
+                // ya tenía cargado el mismo bloqueo, no se duplica.
+                $insert = db()->prepare(
+                    'INSERT INTO booking_blocks (date, start_time, end_time, reason)
+                     SELECT :date, :start, :end, :reason
+                     WHERE NOT EXISTS (
+                         SELECT 1 FROM booking_blocks
+                         WHERE date = :date2 AND start_time <=> :start2 AND end_time <=> :end2
+                     )'
+                );
+                $agregados = 0;
+                $cursor = strtotime($dateFrom);
+                $limite = strtotime($dateTo);
+                while ($cursor <= $limite) {
+                    $date = date('Y-m-d', $cursor);
+                    $insert->execute([
+                        'date' => $date,
+                        'date2' => $date,
+                        'start' => $start !== '' ? $start : null,
+                        'start2' => $start !== '' ? $start : null,
+                        'end' => $end !== '' ? $end : null,
+                        'end2' => $end !== '' ? $end : null,
+                        'reason' => $reason !== '' ? $reason : null,
+                    ]);
+                    $agregados += $insert->rowCount();
+                    $cursor = strtotime('+1 day', $cursor);
+                }
+                $omitidos = $totalDias - $agregados;
+                flash_set('ok', "Se agregaron {$agregados} día(s) bloqueado(s)." . ($omitidos > 0 ? " {$omitidos} ya estaban cargados." : ''));
+            }
+        }
     } elseif ($action === 'delete') {
         $id = (int) ($_POST['id'] ?? 0);
         db()->prepare('DELETE FROM booking_blocks WHERE id = :id')->execute(['id' => $id]);
@@ -88,6 +138,23 @@ admin_page_start('Bloqueos', 'booking-blocks');
     </div>
     <label>Motivo (opcional) <input type="text" name="reason" placeholder="Ej: feriado, viaje, imprevisto"></label>
     <button type="submit" class="btn btn--primary">Agregar bloqueo</button>
+</form>
+
+<h2 style="margin-top:32px;">Agregar bloqueo por período</h2>
+<p>Para cerrar varios días seguidos de una (ej: vacaciones). Carga un bloqueo por cada día del período — después se pueden editar o borrar sueltos en la tabla de arriba.</p>
+<form method="post" class="form form--wide">
+    <?= csrf_field() ?>
+    <input type="hidden" name="action" value="create_range">
+    <div class="form-row form-row--2">
+        <label>Desde <input type="date" name="date_from" required></label>
+        <label>Hasta <input type="date" name="date_to" required></label>
+    </div>
+    <div class="form-row form-row--2">
+        <label>Desde, horario (opcional) <input type="time" name="range_start_time"></label>
+        <label>Hasta, horario (opcional) <input type="time" name="range_end_time"></label>
+    </div>
+    <label>Motivo (opcional) <input type="text" name="range_reason" placeholder="Ej: vacaciones de verano"></label>
+    <button type="submit" class="btn btn--primary">Agregar período</button>
 </form>
 
 <?php admin_page_end(); ?>
