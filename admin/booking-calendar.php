@@ -78,7 +78,7 @@ admin_page_start('Calendario rápido', 'booking-calendar');
 ?>
 
 <p>
-    Vista rápida de <?= e($days) ?> días para bloquear un horario puntual (1 click) o cargar un turno de una consulta que
+    Vista rápida de <?= e((string) $days) ?> días para bloquear un horario puntual (1 click) o cargar un turno de una consulta que
     llegó por teléfono, WhatsApp o mail. Para feriados o vacaciones largas usá <a href="<?= e(url('/admin/booking-blocks.php')) ?>">Bloqueos</a>.
 </p>
 
