@@ -422,6 +422,23 @@ function get_bookings_admin(bool $onlyUpcoming = true): array
     return db()->query($sql)->fetchAll();
 }
 
+function get_booking_admin_by_id(int $id): ?array
+{
+    $stmt = db()->prepare(
+        "SELECT bookings.*,
+                CASE WHEN parent.id IS NULL THEN services.name
+                     ELSE CONCAT(parent.name, ' — ', services.name)
+                END AS service_name
+         FROM bookings
+         LEFT JOIN services ON services.id = bookings.service_id
+         LEFT JOIN services parent ON parent.id = services.parent_service_id
+         WHERE bookings.id = :id LIMIT 1"
+    );
+    $stmt->execute(['id' => $id]);
+    $booking = $stmt->fetch();
+    return $booking ?: null;
+}
+
 /** Turnos a futuro del cliente logueado (para "Mis turnos" en /turnos.php). */
 function get_own_bookings(string $googleSub): array
 {
@@ -442,6 +459,9 @@ function get_own_bookings(string $googleSub): array
 /** Cancelación desde el panel de admin: sin restricciones. */
 function cancel_booking(int $id): void
 {
+    if (function_exists('delete_booking_equipment_files')) {
+        delete_booking_equipment_files($id);
+    }
     db()->prepare('DELETE FROM bookings WHERE id = :id')->execute(['id' => $id]);
 }
 
@@ -452,6 +472,14 @@ function cancel_booking(int $id): void
  */
 function cancel_own_booking(int $id, string $googleSub): bool
 {
+    $ownerStmt = db()->prepare('SELECT COUNT(*) FROM bookings WHERE id = :id AND google_sub = :sub');
+    $ownerStmt->execute(['id' => $id, 'sub' => $googleSub]);
+    if ((int) $ownerStmt->fetchColumn() === 0) {
+        return false;
+    }
+    if (function_exists('delete_booking_equipment_files')) {
+        delete_booking_equipment_files($id);
+    }
     $stmt = db()->prepare('DELETE FROM bookings WHERE id = :id AND google_sub = :sub');
     $stmt->execute(['id' => $id, 'sub' => $googleSub]);
     return $stmt->rowCount() > 0;

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/includes/booking.php';
+require_once __DIR__ . '/includes/booking-equipment.php';
 require_once __DIR__ . '/includes/mailer.php';
 require_once __DIR__ . '/includes/google_oauth.php';
 require_once __DIR__ . '/includes/services.php';
@@ -53,16 +54,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect('/turnos');
     }
 
+    $equipmentWarnings = save_booking_equipment((int) $result['booking']['id'], $_POST, $_FILES);
+
     send_booking_admin_notification($result['booking']);
     send_booking_client_confirmation($result['booking']);
 
     flash_set('ok', 'Turno reservado para el ' . booking_datetime_label($result['booking']) . '. Te mandamos la confirmación por mail.');
+    foreach ($equipmentWarnings as $warning) {
+        flash_set('error', $warning);
+    }
     redirect('/turnos');
 }
 
 $slotsByDate = $bookingUser ? get_available_slots() : [];
 $ownBookings = $bookingUser ? get_own_bookings($bookingUser['sub']) : [];
 $serviceGroups = $bookingUser ? get_services_for_booking_select() : [];
+$equipmentOptions = $bookingUser ? get_customer_equipment_options($bookingUser['sub']) : [];
 // Si se llega desde la ficha de un servicio (ej. /turnos?service=reparacion-pc-cambio-de-bateria),
 // ese servicio queda preseleccionado en el combo.
 $preselectedServiceId = $bookingUser ? get_bookable_service_id_by_slug((string) ($_GET['service'] ?? '')) : null;
@@ -111,7 +118,7 @@ page_start(
             <?php if (!$slotsByDate): ?>
                 <p>No hay horarios disponibles por ahora. <a href="<?= e(wa_link()) ?>" target="_blank" rel="noopener">Escribinos por WhatsApp</a> y lo coordinamos.</p>
             <?php else: ?>
-                <form method="post" id="turnoForm" class="form">
+                <form method="post" enctype="multipart/form-data" id="turnoForm" class="form">
                     <?= csrf_field() ?>
                     <input type="hidden" name="action" value="create">
                     <input type="hidden" name="date" id="turnoDate" value="">
@@ -146,6 +153,7 @@ page_start(
                             </label>
                         <?php endif; ?>
                         <label>Motivo de la consulta (opcional) <textarea name="motivo" rows="3" placeholder="Ej: no enciende, pantalla rota, lento..."></textarea></label>
+                        <?php require __DIR__ . '/includes/booking-equipment-fields.php'; ?>
                         <button type="submit" class="btn btn--primary">Confirmar turno</button>
                     </div>
                 </form>

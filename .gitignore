@@ -7,6 +7,7 @@
 *.sql
 *.sql.gz
 !/sql/schema.sql
+!/sql/migration-booking-equipment.sql
 
 /uploads/
 /vendor/

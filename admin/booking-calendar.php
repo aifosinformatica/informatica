@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/../includes/booking.php';
+require_once __DIR__ . '/../includes/booking-equipment.php';
 require_once __DIR__ . '/../includes/mailer.php';
 require_once __DIR__ . '/../includes/services.php';
 require_once __DIR__ . '/includes/layout.php';
@@ -42,12 +43,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_verify()) {
             'motivo' => (string) ($_POST['motivo'] ?? ''),
         ]);
         if ($result['ok']) {
+            $equipmentWarnings = save_booking_equipment((int) $result['booking']['id'], $_POST, $_FILES);
             // Si el admin cargó un mail, le mandamos igual la confirmación automática;
             // si no (típico de una consulta que llegó solo por teléfono), no hay a quién mandarla.
             if (!empty($result['booking']['email'])) {
                 send_booking_client_confirmation($result['booking']);
             }
             flash_set('ok', 'Turno reservado para ' . $result['booking']['name'] . ' el ' . booking_datetime_label($result['booking']) . '.');
+            foreach ($equipmentWarnings as $warning) {
+                flash_set('error', $warning);
+            }
         } else {
             flash_set('error', $result['error']);
         }
@@ -64,6 +69,7 @@ if ($days > 60) {
 }
 
 $serviceGroups = get_services_for_booking_select();
+$equipmentOptions = get_customer_equipment_options(null, true);
 
 $dayGrid = [];
 for ($i = 0; $i < $days; $i++) {
@@ -130,6 +136,7 @@ admin_page_start('Calendario rápido', 'booking-calendar');
                                 <input type="hidden" name="id" value="<?= (int) $slot['detail']['id'] ?>">
                                 <button type="submit" class="cal-slot__cancel-btn">Cancelar</button>
                             </form>
+                            <a class="cal-slot__detail-link" href="<?= e(url('/admin/booking-detail.php?id=' . (int) $slot['detail']['id'])) ?>">Ficha</a>
                         </div>
                     <?php else: ?>
                         <div class="cal-slot cal-slot--blocked">
@@ -150,7 +157,7 @@ admin_page_start('Calendario rápido', 'booking-calendar');
 </div>
 
 <dialog id="adminBookModal" class="cal-modal">
-    <form method="post">
+    <form method="post" enctype="multipart/form-data">
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="admin_book">
         <input type="hidden" name="date" id="bookDate">
@@ -175,6 +182,7 @@ admin_page_start('Calendario rápido', 'booking-calendar');
             </label>
         <?php endif; ?>
         <label>Motivo (opcional) <textarea name="motivo" rows="2"></textarea></label>
+        <?php require __DIR__ . '/../includes/booking-equipment-fields.php'; ?>
         <div class="cal-modal__actions">
             <button type="button" class="btn btn--ghost" id="adminBookCancel">Cancelar</button>
             <button type="submit" class="btn btn--primary">Reservar turno</button>

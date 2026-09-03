@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/../includes/booking.php';
+require_once __DIR__ . '/../includes/booking-equipment.php';
 require_once __DIR__ . '/includes/layout.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_verify()) {
@@ -50,6 +51,7 @@ admin_page_start('Turnos', 'bookings');
                 <td><?= e($turno['motivo'] ?: '—') ?></td>
                 <td><span class="badge <?= $turno['payment_status'] === 'pagado' ? 'badge--on' : 'badge--off' ?>"><?= e(ucfirst($turno['payment_status'])) ?></span></td>
                 <td class="actions">
+                    <a href="<?= e(url('/admin/booking-detail.php?id=' . (int) $turno['id'])) ?>">Ver ficha</a>
                     <form method="post" onsubmit="return confirm('¿Cancelar este turno? El horario vuelve a estar disponible.');">
                         <?= csrf_field() ?>
                         <input type="hidden" name="action" value="cancel">

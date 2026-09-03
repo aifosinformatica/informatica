@@ -157,6 +157,23 @@ CREATE TABLE IF NOT EXISTS booking_blocks (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Equipos reutilizables: un mismo equipo puede estar asociado a muchos turnos/ingresos.
+CREATE TABLE IF NOT EXISTS customer_equipment (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    owner_google_sub VARCHAR(255) NULL,
+    equipment_type ENUM('notebook','escritorio','otro') NULL,
+    operating_system ENUM('windows','macos','linux','otro','no_sabe') NULL,
+    disk_type ENUM('hdd','ssd_sata','ssd_nvme','otro','no_sabe') NULL,
+    ram_type VARCHAR(40) NULL,
+    ram_amount VARCHAR(40) NULL,
+    cpu VARCHAR(160) NULL,
+    brand VARCHAR(100) NULL,
+    model VARCHAR(160) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_customer_equipment_owner (owner_google_sub)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Turnos reservados por clientes logueados con Google (ver includes/google_oauth.php).
 -- No hay tabla de usuarios propia: el cliente se identifica por google_sub y
 -- los datos de contacto quedan guardados en cada turno.
@@ -180,9 +197,25 @@ CREATE TABLE IF NOT EXISTS bookings (
     -- todavía qué necesita). ON DELETE SET NULL para no perder el turno si el
     -- servicio se borra después; el nombre queda igual en el mail ya enviado.
     service_id INT UNSIGNED NULL,
+    equipment_id INT UNSIGNED NULL,
     motivo VARCHAR(255) NULL,
     payment_status ENUM('simulado','pendiente','pagado') NOT NULL DEFAULT 'simulado',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY uk_bookings_slot (date, start_time),
-    CONSTRAINT fk_bookings_service FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE SET NULL
+    CONSTRAINT fk_bookings_service FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE SET NULL,
+    CONSTRAINT fk_bookings_equipment FOREIGN KEY (equipment_id) REFERENCES customer_equipment(id) ON DELETE SET NULL,
+    INDEX idx_bookings_equipment (equipment_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Fotos de cada ingreso, no del equipo permanente: documentan su estado en ese turno.
+CREATE TABLE IF NOT EXISTS booking_photos (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    booking_id INT UNSIGNED NOT NULL,
+    stored_name VARCHAR(255) NOT NULL,
+    original_name VARCHAR(255) NOT NULL,
+    mime_type VARCHAR(80) NOT NULL,
+    file_size INT UNSIGNED NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_booking_photos_booking FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE,
+    INDEX idx_booking_photos_booking (booking_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

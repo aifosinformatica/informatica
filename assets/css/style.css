@@ -518,6 +518,7 @@ fieldset { border: 1px solid var(--border); border-radius: var(--radius); paddin
 
 .cal-slot--blocked { background: rgba(148, 152, 160, .1); border-color: var(--border); }
 .cal-slot__unblock-btn { background: transparent; border: 1px solid var(--border); color: var(--text-muted); border-radius: 999px; padding: 4px 10px; font-size: .78rem; cursor: pointer; }
+.cal-slot__detail-link { font-size: .78rem; white-space: nowrap; }
 
 .cal-modal {
   border: 1px solid var(--border); border-radius: var(--radius) var(--radius) 0 0;
@@ -536,6 +537,10 @@ fieldset { border: 1px solid var(--border); border-radius: var(--radius); paddin
   color: var(--text); font: inherit; font-size: 16px;
 }
 .cal-modal textarea { resize: vertical; }
+.equipment-fields { display: grid; gap: 12px; min-width: 0; margin: 4px 0; }
+.equipment-fields > p { margin: 0; font-size: .84rem; }
+.equipment-fields small { color: var(--text-dim); line-height: 1.35; }
+.equipment-fields input[type="file"] { height: auto; padding: 9px; }
 .cal-modal__actions {
   position: sticky; bottom: -18px;
   display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
@@ -556,5 +561,18 @@ fieldset { border: 1px solid var(--border); border-radius: var(--radius); paddin
     margin: 0; padding: 0; background: transparent; border-top: 0;
   }
   .cal-modal__actions .btn { width: auto; }
+}
+.booking-detail { margin-bottom: 18px; }
+.booking-detail h2 { font-size: 1.15rem; }
+.booking-detail dl { display: grid; gap: 0; margin: 0; }
+.booking-detail dl > div { padding: 10px 0; border-bottom: 1px solid var(--border-soft); }
+.booking-detail dt { color: var(--text-muted); font-size: .78rem; font-family: var(--font-mono); text-transform: uppercase; }
+.booking-detail dd { margin: 2px 0 0; overflow-wrap: anywhere; }
+.equipment-photos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.equipment-photos a { display: block; aspect-ratio: 1; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--border); }
+.equipment-photos img { width: 100%; height: 100%; object-fit: cover; }
+@media (min-width: 600px) {
+  .booking-detail dl { grid-template-columns: repeat(2, 1fr); column-gap: 24px; }
+  .equipment-photos { grid-template-columns: repeat(4, 1fr); }
 }
 fieldset legend { padding: 0 8px; color: var(--accent); font-weight: 600; font-family: var(--font-mono); font-size: .85rem; }
